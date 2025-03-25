@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Árbol Genealógico</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Generador de Árbol Genealógico</h1>
+
+    <div class="formulario">
+        <input type="text" id="nombre" placeholder="Nombre del nuevo miembro">
+
+        <label for="relacion">Seleccionar o escribir nombre:</label>
+        <input list="listaPersonas" id="relacion" placeholder="Selecciona o escribe un nombre">
+        <datalist id="listaPersonas"></datalist>
+
+        <select id="tipoRelacion">
+            <option value="padre">Padre/Madre</option>
+            <option value="abuelo">Abuelo/Abuela</option>
+            <option value="bisabuelo">Bisabuelo/Bisabuela</option>
+            <option value="hijo">Hijo/Hija</option>
+            <option value="hermano">Hermano/Hermana</option>
+            <option value="esposos">Esposo/Esposa</option>
+        </select>
+
+        <button onclick="agregarMiembro()">Agregar Miembro</button>
+    </div>
+
+    <div id="arbol"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

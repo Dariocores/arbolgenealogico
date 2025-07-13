@@ -1,35 +1,53 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Árbol Genealógico</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <h1>Generador de Árbol Genealógico</h1>
 
     <div class="formulario">
-        <input type="text" id="nombre" placeholder="Nombre del nuevo miembro">
+      <input type="text" id="nombre" placeholder="Nombre del nuevo miembro" />
 
-        <label for="relacion">Seleccionar o escribir nombre:</label>
-        <input list="listaPersonas" id="relacion" placeholder="Selecciona o escribe un nombre">
-        <datalist id="listaPersonas"></datalist>
+      <label for="relacion">Seleccionar o escribir nombre:</label>
+      <input
+        list="datalistPersonas"
+        id="relacion"
+        placeholder="Selecciona o escribe un nombre"
+      />
+      <datalist id="datalistPersonas"></datalist>
 
-        <select id="tipoRelacion">
-            <option value="padre">Padre/Madre</option>
-            <option value="abuelo">Abuelo/Abuela</option>
-            <option value="bisabuelo">Bisabuelo/Bisabuela</option>
-            <option value="hijo">Hijo/Hija</option>
-            <option value="hermano">Hermano/Hermana</option>
-            <option value="esposos">Esposo/Esposa</option>
-        </select>
+      <select id="tipoRelacion">
+        <option value="padre">Padre/Madre</option>
+        <option value="abuelo">Abuelo/Abuela</option>
+        <option value="bisabuelo">Bisabuelo/Bisabuela</option>
+        <option value="hijo">Hijo/Hija</option>
+        <option value="hermano">Hermano/Hermana</option>
+        <option value="esposos">Esposo/Esposa</option>
+      </select>
 
-        <button onclick="agregarMiembro()">Agregar Miembro</button>
+      <label for="genero">Género:</label>
+      <select id="genero">
+        <option value="hombre">Hombre</option>
+        <option value="mujer">Mujer</option>
+      </select>
+
+      <button onclick="agregarMiembro()">Agregar Miembro</button>
+    </div>
+   
+    <div>
+      <h3>Árbol genealógico:</h3>
+      <ul id="listaPersonas"></ul>
+      <button onclick="limpiarArbol()">Limpiar árbol</button>
     </div>
 
-    <div id="arbol"></div>
+    <div style="width:100%;display:flex;justify-content:center;align-items:center;">
+      <canvas id="canvasArbol" width="1200" height="600" style="background:rgba(255,255,255,0.7);border-radius:10px;margin-top:20px;"></canvas>
+    </div>
 
     <script src="script.js"></script>
-</body>
+  </body>
 </html>

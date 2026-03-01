@@ -13,15 +13,24 @@
       <input id="input-avatar" type="url" v-model="avatar" placeholder="URL Avatar (opcional)" aria-label="Avatar" style="max-width:140px" />
       <button type="submit" :disabled="!!errorMsg">{{ editing ? 'Actualizar' : 'Añadir' }}</button>
     </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+      <label for="select-padres">Padres:</label>
+      <select id="select-padres" v-model="selectedPadres" multiple style="min-width:120px">
+        <option v-for="m in selectableMembers" :key="'padre-'+m.nombre" :value="m.nombre">{{ m.nombre }}</option>
+      </select>
+      <label for="select-hijos">Hijos:</label>
+      <select id="select-hijos" v-model="selectedHijos" multiple style="min-width:120px">
+        <option v-for="m in selectableMembers" :key="'hijo-'+m.nombre" :value="m.nombre">{{ m.nombre }}</option>
+      </select>
+    </div>
     <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
     <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
   </form>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import FamilyTree from '@/utils/familyLogic'
-
 
 const name = ref('')
 const gender = ref('other')
@@ -30,6 +39,14 @@ const editing = ref(false)
 const originalName = ref('')
 const errorMsg = ref('')
 const successMsg = ref('')
+const selectedPadres = ref([])
+const selectedHijos = ref([])
+
+const selectableMembers = computed(() => {
+  if (!window.__FAMILY_TREE__ || !window.__FAMILY_TREE__.members) return []
+  // Excluir el propio nombre para evitar auto-relaciones
+  return Object.values(window.__FAMILY_TREE__.members).filter(m => m.nombre !== name.value.trim())
+})
 
 function validateName() {
   errorMsg.value = ''
@@ -57,10 +74,17 @@ function add() {
         window.__FAMILY_TREE__.removeMember(originalName.value)
       }
       window.__FAMILY_TREE__.addMember(name.value.trim(), gender.value)
-      // Guardar avatar en localStorage
       if (avatar.value) {
         window.localStorage.setItem('avatar_' + name.value.trim(), avatar.value)
       }
+      // Relaciones padres
+      selectedPadres.value.forEach(padre => {
+        window.__FAMILY_TREE__.addRelation(padre, name.value.trim(), 'padre')
+      })
+      // Relaciones hijos
+      selectedHijos.value.forEach(hijo => {
+        window.__FAMILY_TREE__.addRelation(name.value.trim(), hijo, 'padre')
+      })
       editing.value = false
       originalName.value = ''
       successMsg.value = 'Miembro actualizado correctamente.'
@@ -69,11 +93,19 @@ function add() {
       if (avatar.value) {
         window.localStorage.setItem('avatar_' + name.value.trim(), avatar.value)
       }
+      selectedPadres.value.forEach(padre => {
+        window.__FAMILY_TREE__.addRelation(padre, name.value.trim(), 'padre')
+      })
+      selectedHijos.value.forEach(hijo => {
+        window.__FAMILY_TREE__.addRelation(name.value.trim(), hijo, 'padre')
+      })
       successMsg.value = 'Miembro añadido correctamente.'
     }
     name.value = ''
     gender.value = 'other'
     avatar.value = ''
+    selectedPadres.value = []
+    selectedHijos.value = []
     setTimeout(() => { successMsg.value = '' }, 1500)
   } catch (e) {
     errorMsg.value = e.message || 'Error desconocido.'
@@ -87,6 +119,12 @@ function startEdit(member) {
   avatar.value = window.localStorage.getItem('avatar_' + member.name) || ''
   editing.value = true
   originalName.value = member.name
+  // Cargar relaciones actuales
+  if (window.__FAMILY_TREE__ && window.__FAMILY_TREE__.members) {
+    const m = window.__FAMILY_TREE__.members[member.name]
+    selectedPadres.value = m && m.padres ? [...m.padres] : []
+    selectedHijos.value = m && m.hijos ? [...m.hijos] : []
+  }
 }
 
 onMounted(() => {

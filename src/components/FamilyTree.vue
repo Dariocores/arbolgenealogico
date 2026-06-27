@@ -154,7 +154,7 @@ function buildLayout(membersArr) {
       }
     }
 
-    // Group into families: couples + singles
+    // Group into families: parejas (compartan hijos o no) + solteros
     const used = new Set()
     const familyGroups = []
 
@@ -163,12 +163,13 @@ function buildLayout(membersArr) {
       const myChildren = parentToChildren[m.nombre] || []
       const spouse = m.esposos.find(esp => {
         if (used.has(esp)) return false
-        return (levels[esp] === lvl) && (parentToChildren[esp] || []).some(c => myChildren.includes(c))
+        return levels[esp] === lvl
       })
 
       if (spouse) {
-        const sharedChildren = myChildren.filter(c => (parentToChildren[spouse] || []).includes(c))
-        familyGroups.push({ parents: [m.nombre, spouse], children: sharedChildren })
+        const spouseChildren = parentToChildren[spouse] || []
+        const allChildren = [...new Set([...myChildren, ...spouseChildren])]
+        familyGroups.push({ parents: [m.nombre, spouse], children: allChildren })
         used.add(m.nombre)
         used.add(spouse)
       } else {
@@ -177,8 +178,8 @@ function buildLayout(membersArr) {
       }
     }
 
-    // Position families left to right
-    let cursorX = 0
+    // Position families left to right, detectando y resolviendo solapamientos
+    let prevFamilyRight = -Infinity
 
     for (const group of familyGroups) {
       const parentNames = group.parents
@@ -186,33 +187,36 @@ function buildLayout(membersArr) {
         const child = membersArr.find(x => x.nombre === c)
         return child && levels[c] === lvl + 1
       })
+      const childXPos = childNames.map(n => pos[n]?.x).filter(x => x !== undefined)
 
-      const childX = childNames.map(n => pos[n]?.x).filter(x => x !== undefined)
+      const isCouple = parentNames.length === 2
+      const familyW = isCouple ? NODE_W * 2 + COUPLE_GAP : NODE_W
 
-      if (childX.length > 0) {
-        const minCx = Math.min(...childX)
-        const maxCx = Math.max(...childX)
-        const centerX = (minCx + maxCx) / 2
-
-        if (parentNames.length === 2) {
-          pos[parentNames[0]] = { x: centerX - NODE_W / 2 - COUPLE_GAP / 2, y: lvl * V_GAP }
-          pos[parentNames[1]] = { x: centerX + NODE_W / 2 + COUPLE_GAP / 2, y: lvl * V_GAP }
-        } else {
-          pos[parentNames[0]] = { x: centerX, y: lvl * V_GAP }
-        }
-
-        const groupW = parentNames.length === 2 ? NODE_W * 2 + COUPLE_GAP : NODE_W
-        cursorX = Math.max(cursorX, centerX + groupW / 2 + FAMILY_GAP)
+      // Centro ideal: sobre los hijos, o secuencial
+      let idealCenterX
+      if (childXPos.length > 0) {
+        const minCx = Math.min(...childXPos)
+        const maxCx = Math.max(...childXPos)
+        idealCenterX = (minCx + maxCx) / 2
       } else {
-        if (parentNames.length === 2) {
-          pos[parentNames[0]] = { x: cursorX, y: lvl * V_GAP }
-          pos[parentNames[1]] = { x: cursorX + NODE_W + COUPLE_GAP, y: lvl * V_GAP }
-          cursorX += NODE_W * 2 + COUPLE_GAP + FAMILY_GAP
-        } else {
-          pos[parentNames[0]] = { x: cursorX + NODE_W / 2, y: lvl * V_GAP }
-          cursorX += NODE_W + FAMILY_GAP
-        }
+        idealCenterX = prevFamilyRight === -Infinity ? familyW / 2 : prevFamilyRight + FAMILY_GAP + familyW / 2
       }
+
+      // Desplazar si hay solapamiento
+      const familyLeft = idealCenterX - familyW / 2
+      const minGap = prevFamilyRight === -Infinity ? 0 : FAMILY_GAP
+      const actualCenterX = familyLeft >= prevFamilyRight + minGap
+        ? idealCenterX
+        : prevFamilyRight + minGap + familyW / 2
+
+      if (isCouple) {
+        pos[parentNames[0]] = { x: actualCenterX - NODE_W / 2 - COUPLE_GAP / 2, y: lvl * V_GAP }
+        pos[parentNames[1]] = { x: actualCenterX + NODE_W / 2 + COUPLE_GAP / 2, y: lvl * V_GAP }
+      } else {
+        pos[parentNames[0]] = { x: actualCenterX, y: lvl * V_GAP }
+      }
+
+      prevFamilyRight = actualCenterX + familyW / 2
     }
 
     // Normalize X

@@ -75,7 +75,7 @@ const rootMember = computed(() => store.rootMember);
 .hero {
   text-align: center;
   padding: 60px 20px;
-  background: linear-gradient(135deg, rgba(67, 160, 71, 0.12), rgba(0, 0, 0, 0.05));
+  background: linear-gradient(135deg, rgba(0, 137, 123, 0.12), rgba(0, 0, 0, 0.05));
   border-radius: 15px;
   margin-bottom: 40px;
 }

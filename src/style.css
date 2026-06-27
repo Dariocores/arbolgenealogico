@@ -1,6 +1,6 @@
 :root {
-  --primary: #43a047;
-  --primary-hover: #2e7d32;
+  --primary: #00897b;
+  --primary-hover: #00695c;
   --bg: #c8dce8;
   --text: #1e2a30;
   --card: #d6e6f0;
@@ -11,14 +11,14 @@
   --tree-node-male: #4db6ac;
   --tree-node-female: #81c784;
   --tree-node-other: #8aadad;
-  --tree-line-marriage: #43a047;
+  --tree-line-marriage: #00897b;
   --tree-line-descent: #888;
   --tree-line-sibling: #d4911a;
 }
 
 [data-theme="dark"] {
-  --primary: #66bb6a;
-  --primary-hover: #4caf50;
+  --primary: #26a69a;
+  --primary-hover: #00897b;
   --bg: #121a24;
   --text: #d0d8e0;
   --card: #1c2634;
@@ -29,7 +29,7 @@
   --tree-node-male: #4db6ac;
   --tree-node-female: #66bb6a;
   --tree-node-other: #609696;
-  --tree-line-marriage: #4caf50;
+  --tree-line-marriage: #26a69a;
   --tree-line-descent: #666;
   --tree-line-sibling: #bf8f1a;
 }

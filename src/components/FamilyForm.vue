@@ -350,7 +350,7 @@ watch(() => props.member, (m) => {
 .field select:focus {
   border-color: var(--primary, #2e7d32);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(67, 160, 71, 0.2);
+  box-shadow: 0 0 0 2px rgba(0, 137, 123, 0.2);
 }
 
 .field input.error {

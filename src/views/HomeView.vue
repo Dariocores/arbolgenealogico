@@ -75,7 +75,7 @@ const rootMember = computed(() => store.rootMember);
 .hero {
   text-align: center;
   padding: 60px 20px;
-  background: linear-gradient(135deg, rgba(233, 30, 99, 0.1), rgba(0, 0, 0, 0.05));
+  background: linear-gradient(135deg, rgba(46, 125, 50, 0.1), rgba(0, 0, 0, 0.05));
   border-radius: 15px;
   margin-bottom: 40px;
 }
@@ -108,7 +108,7 @@ const rootMember = computed(() => store.rootMember);
 
 .info-card {
   background: var(--card, #fff);
-  border-left: 4px solid #e91e63;
+  border-left: 4px solid var(--primary, #2e7d32);
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -175,12 +175,12 @@ const rootMember = computed(() => store.rootMember);
 }
 
 .btn-primary {
-  background: #e91e63;
+  background: var(--primary, #2e7d32);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #c2185b;
+  background: var(--primary-hover, #1b5e20);
   transform: translateY(-2px);
 }
 

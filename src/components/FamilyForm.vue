@@ -294,8 +294,8 @@ watch(() => props.member, (m) => {
 
 .tab.active {
   background: var(--card, #fff);
-  color: #e91e63;
-  border-bottom: 3px solid #e91e63;
+  color: var(--primary, #2e7d32);
+  border-bottom: 3px solid var(--primary, #2e7d32);
   margin-bottom: -2px;
 }
 
@@ -348,9 +348,9 @@ watch(() => props.member, (m) => {
 
 .field input:focus,
 .field select:focus {
-  border-color: #e91e63;
+  border-color: var(--primary, #2e7d32);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(233, 30, 99, 0.15);
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.15);
 }
 
 .field input.error {
@@ -360,7 +360,7 @@ watch(() => props.member, (m) => {
 
 .btn-primary {
   padding: 10px 20px;
-  background: #e91e63;
+  background: var(--primary, #2e7d32);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -371,7 +371,7 @@ watch(() => props.member, (m) => {
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #c2185b;
+  background: var(--primary-hover, #1b5e20);
   transform: translateY(-1px);
 }
 

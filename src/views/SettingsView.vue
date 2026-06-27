@@ -165,8 +165,8 @@ if (localStorage.getItem('theme')) {
 .warning-box p { margin: 0 0 15px 0; color: #856404; font-weight: 600; }
 .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
 .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-.btn-primary { background: #e91e63; color: white; }
-.btn-primary:hover { background: #c2185b; transform: translateY(-2px); }
+.btn-primary { background: var(--primary, #2e7d32); color: white; }
+.btn-primary:hover { background: var(--primary-hover, #1b5e20); transform: translateY(-2px); }
 .btn-secondary { background: #999; color: white; }
 .btn-secondary:hover { background: #777; }
 .btn-danger { background: #d32f2f; color: white; width: 100%; }

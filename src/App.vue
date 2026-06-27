@@ -36,7 +36,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #e91e63;
+  background: var(--primary, #2e7d32);
   padding: 12px 24px;
   color: white;
 }

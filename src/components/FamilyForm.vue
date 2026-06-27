@@ -118,8 +118,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import FamilyTree from '@/utils/familyLogic'
+
+const props = defineProps({
+  member: { type: Object, default: null }
+})
+const emit = defineEmits(['close', 'saved'])
 
 const tab = ref('persona')
 
@@ -175,15 +180,18 @@ function addPersona() {
         tree.removeMember(originalName.value)
       }
       tree.addMember(name.value.trim(), gender.value, data)
+      tree.saveToStorage()
       editing.value = false
       originalName.value = ''
       successMsg.value = `"${name.value}" actualizado correctamente.`
+      emit('saved')
     } else {
       if (tree.members[name.value.trim()]) {
         errorMsg.value = `Ya existe "${name.value}". Usá "Conectar Familiares" para relacionarlo.`
         return
       }
       tree.addMember(name.value.trim(), gender.value, data)
+      tree.saveToStorage()
       successMsg.value = `"${name.value}" guardado. Ahora relacionalo en la pestaña "Conectar Familiares".`
     }
     resetForm()
@@ -224,6 +232,7 @@ function addRelacion() {
 }
 
 function startEdit(member) {
+  if (!member || !member.nombre) return
   name.value = member.nombre
   gender.value = member.genero || 'otro'
   photo.value = member.photo || ''
@@ -233,7 +242,13 @@ function startEdit(member) {
   editing.value = true
   originalName.value = member.nombre
   tab.value = 'persona'
+  errorMsg.value = ''
+  successMsg.value = ''
 }
+
+watch(() => props.member, (m) => {
+  if (m) startEdit(m)
+})
 
 function cancelEdit() {
   resetForm()
@@ -250,10 +265,16 @@ function resetForm() {
   birthPlace.value = ''
 }
 
+function onEditMember(e) {
+  if (e.detail) startEdit(e.detail)
+}
+
 onMounted(() => {
-  window.addEventListener('edit-member', (e) => {
-    if (e.detail) startEdit(e.detail)
-  })
+  window.addEventListener('edit-member', onEditMember)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('edit-member', onEditMember)
 })
 </script>
 

@@ -358,21 +358,33 @@ onUnmounted(() => {
 
 <style scoped>
 .family-tree-container { width: 100%; }
-.empty { color: #999; padding: 40px; text-align: center; }
-.tree-wrapper { overflow: auto; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; }
+.empty { color: var(--muted, #999); padding: 40px; text-align: center; }
+.tree-wrapper {
+  overflow: auto;
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 8px;
+  background: var(--tree-bg, #fafafa);
+  transition: background 0.3s, border-color 0.3s;
+}
 .tree-svg { display: block; min-height: 200px; }
 
-.marriage-lines line { stroke: #e91e63; stroke-width: 3; }
-.descent-lines line { stroke: #999; stroke-width: 2; }
-.sibling-lines line { stroke: #f90; stroke-width: 2; stroke-dasharray: 4 3; }
+.marriage-lines line { stroke: var(--tree-line-marriage, #e91e63); stroke-width: 3; }
+.descent-lines line { stroke: var(--tree-line-descent, #999); stroke-width: 2; }
+.sibling-lines line { stroke: var(--tree-line-sibling, #e6a020); stroke-width: 2; stroke-dasharray: 4 3; }
 
-.node-group { cursor: pointer; }
-.node-group:hover .node-rect { filter: brightness(1.15); }
+.node-group { cursor: pointer; transition: transform 0.15s; }
+.node-group:hover { transform: scale(1.06); }
+.node-group:hover .node-rect { filter: brightness(1.12); }
 
-.node-rect { stroke: #fff; stroke-width: 2; transition: filter 0.2s; }
-.node-rect.male { fill: #4a90d9; }
-.node-rect.female { fill: #e91e63; }
-.node-rect.other { fill: #7aa; }
+.node-rect {
+  stroke: #fff;
+  stroke-width: 2;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12));
+  transition: filter 0.2s;
+}
+.node-rect.male { fill: var(--tree-node-male, #5b9bd5); }
+.node-rect.female { fill: var(--tree-node-female, #e91e63); }
+.node-rect.other { fill: var(--tree-node-other, #6b9e9e); }
 
 .node-photo { border-radius: 50%; object-fit: cover; pointer-events: none; }
 .node-name { fill: #111; font-size: 13px; font-weight: 700; }

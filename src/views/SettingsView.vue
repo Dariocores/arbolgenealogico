@@ -156,11 +156,11 @@ if (localStorage.getItem('theme')) {
 <style scoped>
 .settings-view { padding: 20px; }
 .settings-container { max-width: 600px; margin: 0 auto; }
-.settings-container h2 { font-size: 32px; color: #222; margin-bottom: 30px; }
-.settings-section { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.settings-section h3 { margin-top: 0; margin-bottom: 15px; color: #333; }
-.info-block { background: #f5f5f5; padding: 15px; border-radius: 6px; }
-.info-block p { margin: 8px 0; color: #666; }
+.settings-container h2 { font-size: 32px; color: var(--card-text, #222); margin-bottom: 30px; }
+.settings-section { background: var(--card, #fff); padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: background 0.3s; }
+.settings-section h3 { margin-top: 0; margin-bottom: 15px; color: var(--card-text, #333); }
+.info-block { background: var(--bg, #f5f5f5); padding: 15px; border-radius: 6px; transition: background 0.3s; }
+.info-block p { margin: 8px 0; color: var(--muted, #666); }
 .warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
 .warning-box p { margin: 0 0 15px 0; color: #856404; font-weight: 600; }
 .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -172,12 +172,6 @@ if (localStorage.getItem('theme')) {
 .btn-danger { background: #d32f2f; color: white; width: 100%; }
 .btn-danger:hover { background: #b71c1c; transform: translateY(-2px); }
 .theme-options { display: flex; gap: 20px; }
-.theme-options label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #666; }
+.theme-options label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text, #666); }
 .theme-options input[type="radio"] { cursor: pointer; }
-
-[data-theme="dark"] .settings-section { background: #2a2a2a; }
-[data-theme="dark"] .settings-section h3 { color: #ddd; }
-[data-theme="dark"] .info-block { background: #333; }
-[data-theme="dark"] .info-block p { color: #ccc; }
-[data-theme="dark"] .settings-container h2 { color: #eee; }
 </style>

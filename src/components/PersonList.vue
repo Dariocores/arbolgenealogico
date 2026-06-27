@@ -104,7 +104,7 @@ onMounted(() => {
 
 <style scoped>
 ul { list-style: none; padding:0 }
-li { padding:4px 0 }
+li { padding:4px 0; color: var(--text, #333); }
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -115,11 +115,12 @@ li { padding:4px 0 }
   z-index: 1000;
 }
 .modal {
-  background: #fff;
+  background: var(--card, #fff);
   padding: 24px 20px;
   border-radius: 10px;
   min-width: 320px;
   box-shadow: 0 2px 16px #0002;
+  transition: background 0.3s;
  }
 @media (max-width: 600px) {
   .modal {

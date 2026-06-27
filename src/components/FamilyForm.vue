@@ -268,38 +268,39 @@ watch(() => props.member, (m) => {
 
 <style scoped>
 .family-form {
-  background: #fff;
-  border: 1px solid #e0e0e0;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e0e0e0);
   border-radius: 10px;
   overflow: hidden;
+  transition: background 0.3s, border-color 0.3s;
 }
 
 .tabs {
   display: flex;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--border, #e0e0e0);
 }
 
 .tab {
   flex: 1;
   padding: 12px 16px;
   border: none;
-  background: #f5f5f5;
+  background: var(--bg, #f5f5f5);
   font-weight: 600;
   font-size: 0.95em;
   cursor: pointer;
-  color: #666;
+  color: var(--muted, #666);
   transition: all 0.2s;
 }
 
 .tab.active {
-  background: #fff;
+  background: var(--card, #fff);
   color: #e91e63;
   border-bottom: 3px solid #e91e63;
   margin-bottom: -2px;
 }
 
 .tab:hover:not(.active) {
-  background: #eee;
+  background: var(--border, #eee);
 }
 
 .section {
@@ -307,7 +308,7 @@ watch(() => props.member, (m) => {
 }
 
 .section-desc {
-  color: #666;
+  color: var(--muted, #666);
   font-size: 0.9em;
   margin: 0 0 16px 0;
   line-height: 1.5;
@@ -331,7 +332,7 @@ watch(() => props.member, (m) => {
 .field label {
   font-size: 0.85em;
   font-weight: 600;
-  color: #555;
+  color: var(--text, #555);
 }
 
 .field input,
@@ -340,7 +341,9 @@ watch(() => props.member, (m) => {
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 0.95em;
-  background: #fff;
+  background: var(--card, #fff);
+  color: var(--text, #333);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .field input:focus,
@@ -364,10 +367,12 @@ watch(() => props.member, (m) => {
   font-weight: 600;
   cursor: pointer;
   margin-top: 8px;
+  transition: background 0.2s, transform 0.15s;
 }
 
 .btn-primary:hover:not(:disabled) {
   background: #c2185b;
+  transform: translateY(-1px);
 }
 
 .btn-primary:disabled {
@@ -378,11 +383,12 @@ watch(() => props.member, (m) => {
 .btn-cancel {
   padding: 10px 20px;
   background: transparent;
-  color: #999;
-  border: 1px solid #ccc;
+  color: var(--muted, #999);
+  border: 1px solid var(--border, #ccc);
   border-radius: 6px;
   margin-left: 8px;
   cursor: pointer;
+  transition: border-color 0.2s;
 }
 
 .relacion-grid {
@@ -401,13 +407,13 @@ watch(() => props.member, (m) => {
 
 hr {
   border: none;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border, #e0e0e0);
   margin: 20px 0;
 }
 
 .relacion-list-item {
   padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border, #f0f0f0);
   font-size: 0.9em;
   display: flex;
   flex-wrap: wrap;
@@ -416,11 +422,11 @@ hr {
 }
 
 .rel-tag {
-  background: #f0f0f0;
+  background: var(--bg, #f0f0f0);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.85em;
-  color: #555;
+  color: var(--muted, #555);
 }
 
 .msg {
@@ -450,6 +456,6 @@ hr {
 
 h4 {
   margin: 0 0 12px 0;
-  color: #333;
+  color: var(--card-text, #333);
 }
 </style>

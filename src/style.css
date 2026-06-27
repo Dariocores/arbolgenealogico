@@ -5,6 +5,13 @@
   --card-text: #333;
   --border: #e0e0e0;
   --muted: #999;
+  --tree-bg: #fafafa;
+  --tree-node-male: #5b9bd5;
+  --tree-node-female: #e91e63;
+  --tree-node-other: #6b9e9e;
+  --tree-line-marriage: #e91e63;
+  --tree-line-descent: #999;
+  --tree-line-sibling: #e6a020;
 }
 
 [data-theme="dark"] {
@@ -14,6 +21,13 @@
   --card-text: #ddd;
   --border: #3a3a4e;
   --muted: #888;
+  --tree-bg: #1e1e32;
+  --tree-node-male: #4a7fb5;
+  --tree-node-female: #c2185b;
+  --tree-node-other: #4d8a8a;
+  --tree-line-marriage: #d81b60;
+  --tree-line-descent: #666;
+  --tree-line-sibling: #bf8f1a;
 }
 
 body {

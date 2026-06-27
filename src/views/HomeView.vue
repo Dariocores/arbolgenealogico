@@ -83,12 +83,12 @@ const rootMember = computed(() => store.rootMember);
 .hero h2 {
   font-size: 44px;
   margin-bottom: 15px;
-  color: #222;
+  color: var(--text, #222);
 }
 
 .hero p {
   font-size: 18px;
-  color: #666;
+  color: var(--muted, #666);
   margin-bottom: 30px;
 }
 
@@ -107,17 +107,18 @@ const rootMember = computed(() => store.rootMember);
 }
 
 .info-card {
-  background: white;
+  background: var(--card, #fff);
   border-left: 4px solid #e91e63;
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s;
 }
 
 .info-card h3 {
   margin-top: 0;
   margin-bottom: 15px;
-  color: #222;
+  color: var(--card-text, #222);
 }
 
 .info-card ul {
@@ -128,12 +129,12 @@ const rootMember = computed(() => store.rootMember);
 
 .info-card li {
   padding: 8px 0;
-  color: #666;
+  color: var(--muted, #666);
 }
 
 .stats li {
   padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border, #eee);
 }
 
 .stats li:last-child {
@@ -141,14 +142,15 @@ const rootMember = computed(() => store.rootMember);
 }
 
 .quick-start {
-  background: #f5f5f5;
+  background: var(--bg, #f5f5f5);
   padding: 30px;
   border-radius: 10px;
+  transition: background 0.3s;
 }
 
 .quick-start h3 {
   margin-top: 0;
-  color: #222;
+  color: var(--card-text, #222);
 }
 
 .quick-start ol {
@@ -158,7 +160,7 @@ const rootMember = computed(() => store.rootMember);
 
 .quick-start li {
   padding: 8px 0;
-  color: #666;
+  color: var(--muted, #666);
 }
 
 .btn {

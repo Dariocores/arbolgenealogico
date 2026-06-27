@@ -23,7 +23,7 @@
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal" role="dialog" aria-modal="true" aria-label="Editar miembro">
       <div class="modal">
         <h4>Editar miembro</h4>
-        <FamilyForm :member="editingMember" @close="closeModal" />
+        <FamilyForm :member="editingMember" @close="closeModal" @saved="closeModal" />
         <button @click="closeModal" style="margin-top:10px">Cerrar</button>
       </div>
     </div>

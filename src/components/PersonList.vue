@@ -9,11 +9,11 @@
       <option value="gender">Género</option>
     </select>
     <ul role="list" aria-labelledby="personas-heading">
-      <li v-for="p of sortedPeople" :key="p.name" tabindex="0" style="outline:none;display:flex;align-items:center;gap:8px">
-        <img v-if="getAvatar(p.name)" :src="getAvatar(p.name)" alt="Avatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
-        <span>{{ p.name }} <small>({{ p.gender }})</small></span>
-        <button @click="openEditModal(p)" aria-label="Editar {{p.name}}">Editar</button>
-        <button @click="deleteMember(p)" aria-label="Eliminar {{p.name}}">Eliminar</button>
+      <li v-for="p of sortedPeople" :key="p.nombre" tabindex="0" style="outline:none;display:flex;align-items:center;gap:8px">
+        <img v-if="getAvatar(p.nombre)" :src="getAvatar(p.nombre)" alt="Avatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
+        <span>{{ p.nombre }} <small>({{ p.genero }})</small></span>
+        <button @click="openEditModal(p)" aria-label="Editar {{p.nombre}}">Editar</button>
+        <button @click="deleteMember(p)" aria-label="Eliminar {{p.nombre}}">Eliminar</button>
       </li>
     </ul>
     <div v-if="saveFeedback" class="save-feedback">
@@ -51,15 +51,15 @@ function refresh() {
 
 const filteredPeople = computed(() => {
   if (!search.value) return people.value
-  return people.value.filter(p => p.name.toLowerCase().includes(search.value.toLowerCase()))
+  return people.value.filter(p => p.nombre.toLowerCase().includes(search.value.toLowerCase()))
 })
 
 const sortedPeople = computed(() => {
   const arr = [...filteredPeople.value]
   if (sortKey.value === 'name') {
-    arr.sort((a, b) => a.name.localeCompare(b.name))
+    arr.sort((a, b) => a.nombre.localeCompare(b.nombre))
   } else if (sortKey.value === 'gender') {
-    arr.sort((a, b) => a.gender.localeCompare(b.gender))
+    arr.sort((a, b) => a.genero.localeCompare(b.genero))
   }
   return arr
 })
@@ -74,12 +74,11 @@ function closeModal() {
 }
 
 function deleteMember(member) {
-  if (confirm(`¿Eliminar a ${member.name}?`)) {
+  if (confirm(`¿Eliminar a ${member.nombre}?`)) {
     const tree = window.__FAMILY_TREE__
     if (tree && tree.removeMember) {
-      // Guardar snapshot antes de borrar
       window.lastDeleteSnapshot = JSON.stringify(tree.toJSON())
-      tree.removeMember(member.name)
+      tree.removeMember(member.nombre)
       refresh()
       saveFeedback.value = 'Miembro eliminado. '
       setTimeout(() => { saveFeedback.value = '' }, 2000)
@@ -147,15 +146,15 @@ li { padding:4px 0 }
   clip: rect(0,0,0,0);
   border: 0;
 }
-+.save-feedback {
-+  margin-top: 10px;
-+  background: #e0ffe0;
-+  border: 1px solid #0c0;
-+  color: #080;
-+  padding: 8px 12px;
-+  border-radius: 6px;
-+  display: flex;
-+  align-items: center;
-+  gap: 10px;
-+}
+.save-feedback {
+  margin-top: 10px;
+  background: #e0ffe0;
+  border: 1px solid #0c0;
+  color: #080;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 </style>

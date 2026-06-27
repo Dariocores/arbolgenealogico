@@ -13,18 +13,4 @@ export default defineConfig({
     port: 5173,
     open: true,
   },
-  build: {
-    minify: 'terser',
-    sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'd3': ['d3'],
-          'pinia': ['pinia'],
-          'vue-router': ['vue-router'],
-        }
-      }
-    }
-  }
 })
- 

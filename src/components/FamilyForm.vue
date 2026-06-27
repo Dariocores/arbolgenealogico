@@ -1,130 +1,253 @@
 <template>
-  <form @submit.prevent="add" aria-label="Formulario de miembro" style="width:100%">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <label for="input-nombre" class="sr-only">Nombre</label>
-      <input id="input-nombre" v-model="name" placeholder="Nombre" :class="{ error: errorMsg }" @input="validateName" aria-required="true" aria-label="Nombre" />
-      <label for="select-genero" class="sr-only">Género</label>
-      <select id="select-genero" v-model="gender" aria-label="Género">
-        <option value="male">Masculino</option>
-        <option value="female">Femenino</option>
-        <option value="other">Otro</option>
-      </select>
-      <label for="input-avatar" class="sr-only">Avatar</label>
-      <input id="input-avatar" type="url" v-model="avatar" placeholder="URL Avatar (opcional)" aria-label="Avatar" style="max-width:140px" />
-      <button type="submit" :disabled="!!errorMsg">{{ editing ? 'Actualizar' : 'Añadir' }}</button>
+  <div class="family-form">
+    <!-- PESTAÑAS -->
+    <div class="tabs">
+      <button :class="['tab', { active: tab === 'persona' }]" @click="tab = 'persona'">
+        1. Agregar Persona
+      </button>
+      <button :class="['tab', { active: tab === 'relacion' }]" @click="tab = 'relacion'">
+        2. Conectar Familiares
+      </button>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
-      <label for="select-padres">Padres:</label>
-      <select id="select-padres" v-model="selectedPadres" multiple style="min-width:120px">
-        <option v-for="m in selectableMembers" :key="'padre-'+m.nombre" :value="m.nombre">{{ m.nombre }}</option>
-      </select>
-      <label for="select-hijos">Hijos:</label>
-      <select id="select-hijos" v-model="selectedHijos" multiple style="min-width:120px">
-        <option v-for="m in selectableMembers" :key="'hijo-'+m.nombre" :value="m.nombre">{{ m.nombre }}</option>
-      </select>
+
+    <!-- PESTAÑA 1: AGREGAR PERSONA -->
+    <form v-show="tab === 'persona'" @submit.prevent="addPersona" class="section">
+      <p class="section-desc">Completa los datos y presiona <strong>Guardar Persona</strong>. Después usa la pestaña "Conectar Familiares" para definir sus relaciones.</p>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="input-nombre">Nombre completo *</label>
+          <input id="input-nombre" v-model="name" placeholder="Ej: Juan Pérez" :class="{ error: errorMsg }" @input="clearMessages" />
+        </div>
+        <div class="field">
+          <label for="select-genero">Género</label>
+          <select id="select-genero" v-model="gender">
+            <option value="hombre">Masculino</option>
+            <option value="mujer">Femenino</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="input-nacimiento">Fecha de nacimiento</label>
+          <input id="input-nacimiento" v-model="birthDate" type="date" />
+        </div>
+        <div class="field">
+          <label for="input-muerte">Fecha de muerte</label>
+          <input id="input-muerte" v-model="deathDate" type="date" />
+        </div>
+        <div class="field">
+          <label for="input-lugar">Lugar de nacimiento</label>
+          <input id="input-lugar" v-model="birthPlace" placeholder="Ej: Buenos Aires" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="input-foto">URL de foto (opcional)</label>
+        <input id="input-foto" v-model="photo" type="url" placeholder="https://ejemplo.com/foto.jpg" />
+      </div>
+
+      <button type="submit" class="btn-primary" :disabled="!!errorMsg">
+        {{ editing ? 'Actualizar Persona' : 'Guardar Persona' }}
+      </button>
+      <button v-if="editing" type="button" class="btn-cancel" @click="cancelEdit">Cancelar</button>
+
+      <div v-if="successMsg" class="msg success">{{ successMsg }}</div>
+      <div v-if="errorMsg" class="msg error">{{ errorMsg }}</div>
+    </form>
+
+    <!-- PESTAÑA 2: CONECTAR FAMILIARES -->
+    <div v-show="tab === 'relacion'" class="section">
+      <p class="section-desc">
+        Seleccioná dos personas ya registradas y elegí qué parentesco las une.
+      </p>
+
+      <div class="relacion-grid">
+        <div class="field">
+          <label for="select-persona-a">Persona A</label>
+          <select id="select-persona-a" v-model="relPersonaA">
+            <option value="">-- Seleccionar --</option>
+            <option v-for="m in allMembers" :key="'a-'+m.nombre" :value="m.nombre">{{ m.nombre }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="select-parentesco">Es ... de Persona B</label>
+          <select id="select-parentesco" v-model="relTipo">
+            <option value="">-- Seleccionar --</option>
+            <option value="padre">Padre / Madre</option>
+            <option value="hijo">Hijo / Hija</option>
+            <option value="hermano">Hermano / Hermana</option>
+            <option value="esposo">Esposo / Esposa (pareja)</option>
+            <option value="abuelo">Abuelo / Abuela</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="select-persona-b">Persona B</label>
+          <select id="select-persona-b" v-model="relPersonaB">
+            <option value="">-- Seleccionar --</option>
+            <option v-for="m in allMembers" :key="'b-'+m.nombre" :value="m.nombre">{{ m.nombre }}</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="button" class="btn-primary" :disabled="!relPersonaA || !relPersonaB || !relTipo" @click="addRelacion">
+        Conectar Familiares
+      </button>
+
+      <div v-if="relSuccessMsg" class="msg success">{{ relSuccessMsg }}</div>
+      <div v-if="relErrorMsg" class="msg error">{{ relErrorMsg }}</div>
+
+      <hr />
+
+      <h4>Relaciones existentes</h4>
+      <div v-if="allMembers.length === 0" class="msg info">Aún no hay personas registradas.</div>
+      <div v-for="m in allMembers" :key="'rel-'+m.nombre" class="relacion-list-item">
+        <strong>{{ m.nombre }}</strong>
+        <span v-if="m.padres.length" class="rel-tag">Hijo de: {{ m.padres.join(', ') }}</span>
+        <span v-if="m.hijos.length" class="rel-tag">Padre de: {{ m.hijos.join(', ') }}</span>
+        <span v-if="m.hermanos.length" class="rel-tag">Hermano de: {{ m.hermanos.join(', ') }}</span>
+        <span v-if="m.esposos.length" class="rel-tag">Pareja de: {{ m.esposos.join(', ') }}</span>
+        <span v-if="m.abuelos.length" class="rel-tag">Nieto de: {{ m.abuelos.join(', ') }}</span>
+      </div>
     </div>
-    <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
-    <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
-  </form>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import FamilyTree from '@/utils/familyLogic'
 
+const tab = ref('persona')
+
 const name = ref('')
-const gender = ref('other')
-const avatar = ref('')
+const gender = ref('otro')
+const photo = ref('')
+const birthDate = ref('')
+const deathDate = ref('')
+const birthPlace = ref('')
 const editing = ref(false)
 const originalName = ref('')
+
+const relPersonaA = ref('')
+const relPersonaB = ref('')
+const relTipo = ref('')
+
 const errorMsg = ref('')
 const successMsg = ref('')
-const selectedPadres = ref([])
-const selectedHijos = ref([])
+const relErrorMsg = ref('')
+const relSuccessMsg = ref('')
 
-const selectableMembers = computed(() => {
-  if (!window.__FAMILY_TREE__ || !window.__FAMILY_TREE__.members) return []
-  // Excluir el propio nombre para evitar auto-relaciones
-  return Object.values(window.__FAMILY_TREE__.members).filter(m => m.nombre !== name.value.trim())
+const allMembers = computed(() => {
+  return window.__FAMILY_TREE__ ? Object.values(window.__FAMILY_TREE__.members) : []
 })
 
-function validateName() {
+const selectableMembers = computed(() => {
+  return allMembers.value.filter(m => m.nombre !== name.value.trim())
+})
+
+function clearMessages() {
+  errorMsg.value = ''
+  successMsg.value = ''
+}
+
+function addPersona() {
   errorMsg.value = ''
   successMsg.value = ''
   if (!name.value.trim()) {
     errorMsg.value = 'El nombre es obligatorio.'
     return
   }
-  if (!window.__FAMILY_TREE__) return
-  const exists = window.__FAMILY_TREE__.members && window.__FAMILY_TREE__.members[name.value.trim()]
-  if (exists && (!editing.value || originalName.value !== name.value.trim())) {
-    errorMsg.value = 'Ya existe un miembro con ese nombre.'
-  }
-}
-
-function add() {
-  errorMsg.value = ''
-  successMsg.value = ''
-  validateName()
-  if (errorMsg.value) return
   if (!window.__FAMILY_TREE__) window.__FAMILY_TREE__ = new FamilyTree()
+  const tree = window.__FAMILY_TREE__
   try {
+    const data = {
+      birthDate: birthDate.value,
+      deathDate: deathDate.value,
+      birthPlace: birthPlace.value,
+      photo: photo.value
+    }
     if (editing.value) {
       if (originalName.value && originalName.value !== name.value.trim()) {
-        window.__FAMILY_TREE__.removeMember(originalName.value)
+        tree.removeMember(originalName.value)
       }
-      window.__FAMILY_TREE__.addMember(name.value.trim(), gender.value)
-      if (avatar.value) {
-        window.localStorage.setItem('avatar_' + name.value.trim(), avatar.value)
-      }
-      // Relaciones padres
-      selectedPadres.value.forEach(padre => {
-        window.__FAMILY_TREE__.addRelation(padre, name.value.trim(), 'padre')
-      })
-      // Relaciones hijos
-      selectedHijos.value.forEach(hijo => {
-        window.__FAMILY_TREE__.addRelation(name.value.trim(), hijo, 'padre')
-      })
+      tree.addMember(name.value.trim(), gender.value, data)
       editing.value = false
       originalName.value = ''
-      successMsg.value = 'Miembro actualizado correctamente.'
+      successMsg.value = `"${name.value}" actualizado correctamente.`
     } else {
-      window.__FAMILY_TREE__.addMember(name.value.trim(), gender.value)
-      if (avatar.value) {
-        window.localStorage.setItem('avatar_' + name.value.trim(), avatar.value)
+      if (tree.members[name.value.trim()]) {
+        errorMsg.value = `Ya existe "${name.value}". Usá "Conectar Familiares" para relacionarlo.`
+        return
       }
-      selectedPadres.value.forEach(padre => {
-        window.__FAMILY_TREE__.addRelation(padre, name.value.trim(), 'padre')
-      })
-      selectedHijos.value.forEach(hijo => {
-        window.__FAMILY_TREE__.addRelation(name.value.trim(), hijo, 'padre')
-      })
-      successMsg.value = 'Miembro añadido correctamente.'
+      tree.addMember(name.value.trim(), gender.value, data)
+      successMsg.value = `"${name.value}" guardado. Ahora relacionalo en la pestaña "Conectar Familiares".`
     }
-    name.value = ''
-    gender.value = 'other'
-    avatar.value = ''
-    selectedPadres.value = []
-    selectedHijos.value = []
-    setTimeout(() => { successMsg.value = '' }, 1500)
+    resetForm()
   } catch (e) {
     errorMsg.value = e.message || 'Error desconocido.'
     console.error(e)
   }
 }
 
-function startEdit(member) {
-  name.value = member.name
-  gender.value = member.gender || 'other'
-  avatar.value = window.localStorage.getItem('avatar_' + member.name) || ''
-  editing.value = true
-  originalName.value = member.name
-  // Cargar relaciones actuales
-  if (window.__FAMILY_TREE__ && window.__FAMILY_TREE__.members) {
-    const m = window.__FAMILY_TREE__.members[member.name]
-    selectedPadres.value = m && m.padres ? [...m.padres] : []
-    selectedHijos.value = m && m.hijos ? [...m.hijos] : []
+function addRelacion() {
+  relErrorMsg.value = ''
+  relSuccessMsg.value = ''
+  if (!relPersonaA.value || !relPersonaB.value || !relTipo.value) return
+  if (relPersonaA.value === relPersonaB.value) {
+    relErrorMsg.value = 'No podés conectar a una persona consigo misma.'
+    return
   }
+  const tree = window.__FAMILY_TREE__
+  if (!tree) return
+  try {
+    tree.addRelation(relPersonaA.value, relPersonaB.value, relTipo.value)
+    tree.saveToStorage()
+    const tipoLabel = {
+      padre: 'padre/madre de',
+      hijo: 'hijo/hija de',
+      hermano: 'hermano/hermana de',
+      esposo: 'pareja de',
+      abuelo: 'abuelo/abuela de'
+    }
+    relSuccessMsg.value = `"${relPersonaA.value}" es ${tipoLabel[relTipo.value] || relTipo.value} "${relPersonaB.value}".`
+    relPersonaA.value = ''
+    relPersonaB.value = ''
+    relTipo.value = ''
+  } catch (e) {
+    relErrorMsg.value = e.message || 'Error desconocido.'
+    console.error(e)
+  }
+}
+
+function startEdit(member) {
+  name.value = member.nombre
+  gender.value = member.genero || 'otro'
+  photo.value = member.photo || ''
+  birthDate.value = member.birthDate || ''
+  deathDate.value = member.deathDate || ''
+  birthPlace.value = member.birthPlace || ''
+  editing.value = true
+  originalName.value = member.nombre
+  tab.value = 'persona'
+}
+
+function cancelEdit() {
+  resetForm()
+  editing.value = false
+  originalName.value = ''
+}
+
+function resetForm() {
+  name.value = ''
+  gender.value = 'otro'
+  photo.value = ''
+  birthDate.value = ''
+  deathDate.value = ''
+  birthPlace.value = ''
 }
 
 onMounted(() => {
@@ -134,46 +257,190 @@ onMounted(() => {
 })
 </script>
 
-      if (editing.value) {
-        // Si el nombre cambió, eliminar el anterior y crear el nuevo
-        if (originalName.value && originalName.value !== name.value.trim()) {
-          window.__FAMILY_TREE__.removeMember(originalName.value)
-        }
-        window.__FAMILY_TREE__.addMember(name.value.trim(), gender.value)
-        editing.value = false
-        originalName.value = ''
-      } else {
-        window.__FAMILY_TREE__.addMember(name.value.trim(), gender.value)
-      }
 <style scoped>
-input { padding:6px; }
-select { padding:6px }
-button { padding:6px 10px }
-.error { border: 1px solid #e00; background: #fee; }
-.error-msg { color: #e00; margin-top: 4px; font-size: 0.95em; }
-.success-msg { color: #080; margin-top: 4px; font-size: 0.95em; }
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
+.family-form {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
   overflow: hidden;
-  clip: rect(0,0,0,0);
-  border: 0;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: #f5f5f5;
+  font-weight: 600;
+  font-size: 0.95em;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  background: #fff;
+  color: #e91e63;
+  border-bottom: 3px solid #e91e63;
+  margin-bottom: -2px;
+}
+
+.tab:hover:not(.active) {
+  background: #eee;
+}
+
+.section {
+  padding: 20px;
+}
+
+.section-desc {
+  color: #666;
+  font-size: 0.9em;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.field-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.field label {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #555;
+}
+
+.field input,
+.field select {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95em;
+  background: #fff;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: #e91e63;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(233, 30, 99, 0.15);
+}
+
+.field input.error {
+  border-color: #e00;
+  background: #fee;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  background: #e91e63;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #c2185b;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  background: transparent;
+  color: #999;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+.relacion-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+  .relacion-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 20px 0;
+}
+
+.relacion-list-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.rel-tag {
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: #555;
+}
+
+.msg {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+.msg.success {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.msg.error {
+  background: #fce4ec;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.msg.info {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+h4 {
+  margin: 0 0 12px 0;
+  color: #333;
 }
 </style>
-
-
-  function startEdit(member) {
-    name.value = member.name
-    gender.value = member.gender || 'other'
-    editing.value = true
-    originalName.value = member.name
-  }
-
-  onMounted(() => {
-    window.addEventListener('edit-member', (e) => {
-      if (e.detail) startEdit(e.detail)
-    })
-  })

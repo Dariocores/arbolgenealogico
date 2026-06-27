@@ -139,14 +139,14 @@ export class FamilyTree {
         break
 
       case 'hijo':
-        if (!m2.padres.includes(nombre)) {
-          m2.padres.push(nombre)
+        if (!m1.padres.includes(personaRelacionada)) {
+          m1.padres.push(personaRelacionada)
         }
-        if (!m1.hijos.includes(personaRelacionada)) {
-          m1.hijos.push(personaRelacionada)
+        if (!m2.hijos.includes(nombre)) {
+          m2.hijos.push(nombre)
         }
-        this._updateHermanos(m1.hijos)
-        this._updateAbuelos(personaRelacionada)
+        this._updateHermanos(m2.hijos)
+        this._updateAbuelos(nombre)
         break
 
       case 'hermano':

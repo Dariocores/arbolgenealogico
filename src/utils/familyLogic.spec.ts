@@ -126,8 +126,8 @@ describe('FamilyTree', () => {
       tree.addMember('Padre', 'hombre')
       tree.addMember('Ana', 'mujer')
       tree.addMember('Juan', 'hombre')
-      tree.addRelation('Padre', 'Ana', 'hijo')
-      tree.addRelation('Padre', 'Juan', 'hijo')
+      tree.addRelation('Ana', 'Padre', 'hijo')
+      tree.addRelation('Juan', 'Padre', 'hijo')
       
       expect(tree.getMember('Ana')?.hermanos).toContain('Juan')
       expect(tree.getMember('Juan')?.hermanos).toContain('Ana')
@@ -140,8 +140,8 @@ describe('FamilyTree', () => {
       tree.addMember('Padre', 'hombre')
       tree.addMember('Hijo', 'hombre')
       
-      tree.addRelation('Abuelo', 'Padre', 'hijo')
-      tree.addRelation('Padre', 'Hijo', 'hijo')
+      tree.addRelation('Padre', 'Abuelo', 'hijo')
+      tree.addRelation('Hijo', 'Padre', 'hijo')
       
       expect(tree.getMember('Hijo')?.abuelos).toContain('Abuelo')
     })

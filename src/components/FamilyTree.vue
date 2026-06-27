@@ -69,19 +69,56 @@ function getLevels(membersArr) {
   const levels = {}
   const visited = new Set()
   function dfs(name, level) {
-    if (visited.has(name)) return
+    if (visited.has(name)) {
+      if (levels[name] !== undefined && level > levels[name]) {
+        levels[name] = level
+      }
+      return
+    }
     visited.add(name)
     if (levels[name] === undefined || level > levels[name]) {
       levels[name] = level
-      const m = membersArr.find(x => x.nombre === name)
-      if (m && m.hijos) {
-        m.hijos.forEach(h => dfs(h, level + 1))
-      }
+    }
+    const m = membersArr.find(x => x.nombre === name)
+    if (m) {
+      if (m.hijos) m.hijos.forEach(h => dfs(h, level + 1))
     }
   }
   membersArr
     .filter(m => !m.padres || m.padres.length === 0)
     .forEach(m => dfs(m.nombre, 0))
+
+  // Propagar nivel entre esposos (deben estar en la misma generación)
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const m of membersArr) {
+      for (const esp of m.esposos) {
+        const l1 = levels[m.nombre]
+        const l2 = levels[esp]
+        if (l1 !== undefined && l2 !== undefined && l1 !== l2) {
+          const maxL = Math.max(l1, l2)
+          levels[m.nombre] = maxL
+          levels[esp] = maxL
+          changed = true
+        } else if (l1 !== undefined && l2 === undefined) {
+          levels[esp] = l1
+          changed = true
+        } else if (l1 === undefined && l2 !== undefined) {
+          levels[m.nombre] = l2
+          changed = true
+        }
+      }
+    }
+  }
+
+  // Asignar nivel 0 a quien no tenga nivel
+  for (const m of membersArr) {
+    if (levels[m.nombre] === undefined) {
+      levels[m.nombre] = 0
+    }
+  }
+
   return levels
 }
 

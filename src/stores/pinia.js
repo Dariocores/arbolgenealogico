@@ -30,8 +30,9 @@ export const useFamilyStore = defineStore('family', {
       this.tree.removeMember(nombre)
     },
     clearTree() {
-      this.tree.members = {}
-      this.tree._saveToStorage()
+      this.tree = new FamilyTree()
+      this.tree.saveToStorage()
+      window.__FAMILY_TREE__ = this.tree
     }
   }
 })

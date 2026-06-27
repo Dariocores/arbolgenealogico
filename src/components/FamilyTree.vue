@@ -30,18 +30,10 @@
               :class="['node-rect', genderClass(nd.gender)]" />
             <!-- Foto si tiene -->
             <image v-if="nd.photo" :href="nd.photo" x="-52" y="-17" width="34" height="34" class="node-photo" />
-            <!-- Nombre (truncado si muy largo) -->
-            <text x="0" y="-4" text-anchor="middle"
-              :font-size="fontSize(nd.label)" class="node-name"
-              :textLength="nd.photo ? 70 : 108" lengthAdjust="spacingAndGlyphs">
-              {{ nd.label }}
-            </text>
+            <!-- Nombre -->
+            <text x="0" :y="nd.dates ? -2 : 5" text-anchor="middle" class="node-name">{{ nd.label }}</text>
             <!-- Fechas -->
-            <text v-if="nd.dates" x="0" y="14" text-anchor="middle"
-              font-size="10" class="node-dates"
-              textLength="110" lengthAdjust="spacingAndGlyphs">
-              {{ nd.dates }}
-            </text>
+            <text v-if="nd.dates" x="0" y="14" text-anchor="middle" class="node-dates">{{ nd.dates }}</text>
           </g>
         </g>
       </svg>
@@ -69,12 +61,6 @@ function genderClass(g) {
   if (g === 'hombre') return 'male'
   if (g === 'mujer') return 'female'
   return 'other'
-}
-
-function fontSize(name) {
-  if (name.length > 14) return 10
-  if (name.length > 10) return 11
-  return 12
 }
 
 function getLevels(membersArr) {
@@ -343,6 +329,6 @@ onUnmounted(() => {
 .node-rect.other { fill: #7aa; }
 
 .node-photo { border-radius: 50%; object-fit: cover; pointer-events: none; }
-.node-name { fill: #fff; font-weight: 600; }
-.node-dates { fill: rgba(255,255,255,0.75); }
+.node-name { fill: #111; font-size: 13px; font-weight: 700; }
+.node-dates { fill: #333; font-size: 10px; }
 </style>

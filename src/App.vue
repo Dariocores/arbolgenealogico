@@ -28,8 +28,8 @@
 
 body {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  background: #f5f5f5;
-  color: #333;
+  background: var(--bg, #c2c2c2);
+  color: var(--text, #2a2a2a);
 }
 
 .navbar {

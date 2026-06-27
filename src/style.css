@@ -1,19 +1,19 @@
 :root {
   --primary: #2e7d32;
   --primary-hover: #1b5e20;
-  --bg: #e8e8e8;
-  --text: #333;
-  --card: #ececec;
-  --card-text: #333;
-  --border: #d0d0d0;
-  --muted: #888;
-  --tree-bg: #e4e4e4;
+  --bg: #c2c2c2;
+  --text: #2a2a2a;
+  --card: #d4d4d4;
+  --card-text: #2a2a2a;
+  --border: #aaa;
+  --muted: #6e6e6e;
+  --tree-bg: #cacaca;
   --tree-node-male: #5b9bd5;
   --tree-node-female: #66bb6a;
   --tree-node-other: #6b9e9e;
   --tree-line-marriage: #2e7d32;
-  --tree-line-descent: #999;
-  --tree-line-sibling: #e6a020;
+  --tree-line-descent: #888;
+  --tree-line-sibling: #d4911a;
 }
 
 [data-theme="dark"] {

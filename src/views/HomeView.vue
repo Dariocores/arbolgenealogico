@@ -185,12 +185,12 @@ const rootMember = computed(() => store.rootMember);
 }
 
 .btn-secondary {
-  background: #999;
+  background: var(--muted, #6e6e6e);
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #777;
+  background: #555;
 }
 
 .btn-large {

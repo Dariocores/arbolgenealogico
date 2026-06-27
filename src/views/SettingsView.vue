@@ -167,8 +167,8 @@ if (localStorage.getItem('theme')) {
 .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
 .btn-primary { background: var(--primary, #2e7d32); color: white; }
 .btn-primary:hover { background: var(--primary-hover, #1b5e20); transform: translateY(-2px); }
-.btn-secondary { background: #999; color: white; }
-.btn-secondary:hover { background: #777; }
+.btn-secondary { background: var(--muted, #6e6e6e); color: white; }
+.btn-secondary:hover { background: #555; }
 .btn-danger { background: #d32f2f; color: white; width: 100%; }
 .btn-danger:hover { background: #b71c1c; transform: translateY(-2px); }
 .theme-options { display: flex; gap: 20px; }

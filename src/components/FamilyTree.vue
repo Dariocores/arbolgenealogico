@@ -342,7 +342,8 @@ function onNodeClick(nd) {
 
 function refresh() {
   const tree = window.__FAMILY_TREE__
-  members.value = tree ? Object.values(tree.members || {}) : []
+  if (!tree) return
+  members.value = Object.values(tree.members || {})
 }
 
 let interval

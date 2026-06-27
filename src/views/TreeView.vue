@@ -2,20 +2,27 @@
   <div class="tree-view">
     <div class="tree-content">
       <div class="tree-left">
-        <FamilyForm />
+        <FamilyForm :member="editingMember" @saved="editingMember = null" />
         <PersonList />
       </div>
       <div class="tree-right">
-        <FamilyTree />
+        <FamilyTree @select-node="onSelectNode" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import FamilyForm from '../components/FamilyForm.vue';
 import FamilyTree from '../components/FamilyTree.vue';
 import PersonList from '../components/PersonList.vue';
+
+const editingMember = ref(null)
+
+function onSelectNode(nd) {
+  editingMember.value = { ...nd }
+}
 </script>
 
 <style scoped>

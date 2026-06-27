@@ -118,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import FamilyTree from '@/utils/familyLogic'
 
 const props = defineProps({
@@ -246,10 +246,6 @@ function startEdit(member) {
   successMsg.value = ''
 }
 
-watch(() => props.member, (m) => {
-  if (m) startEdit(m)
-})
-
 function cancelEdit() {
   resetForm()
   editing.value = false
@@ -265,17 +261,9 @@ function resetForm() {
   birthPlace.value = ''
 }
 
-function onEditMember(e) {
-  if (e.detail) startEdit(e.detail)
-}
-
-onMounted(() => {
-  window.addEventListener('edit-member', onEditMember)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('edit-member', onEditMember)
-})
+watch(() => props.member, (m) => {
+  if (m) startEdit(m)
+}, { immediate: true })
 </script>
 
 <style scoped>

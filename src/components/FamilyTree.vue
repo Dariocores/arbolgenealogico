@@ -27,7 +27,7 @@
             @click="onNodeClick(nd)">
             <!-- Fondo -->
             <rect x="-60" y="-25" width="120" height="50" rx="8"
-              :class="['node-rect', genderClass(nd.gender)]" />
+              :class="['node-rect', genderClass(nd.genero)]" />
             <!-- Foto si tiene -->
             <image v-if="nd.photo" :href="nd.photo" x="-52" y="-17" width="34" height="34" class="node-photo" />
             <!-- Nombre -->
@@ -43,6 +43,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+
+const emit = defineEmits(['select-node'])
 
 const members = ref([])
 const svgRef = ref(null)
@@ -189,11 +191,13 @@ function buildLayout(membersArr) {
     return {
       id: m.id || m.nombre,
       label: m.nombre,
-      gender: m.genero,
       nombre: m.nombre,
-      photo: m.photo || '',
-      dates: [m.birthDate, m.deathDate].filter(Boolean).join(' - '),
       genero: m.genero,
+      photo: m.photo || '',
+      birthDate: m.birthDate || '',
+      deathDate: m.deathDate || '',
+      birthPlace: m.birthPlace || '',
+      dates: [m.birthDate, m.deathDate].filter(Boolean).join(' - '),
       x: p.x,
       y: p.y
     }
@@ -292,7 +296,7 @@ const svgWidth = computed(() => layoutData.value.width)
 const svgHeight = computed(() => layoutData.value.height)
 
 function onNodeClick(nd) {
-  window.dispatchEvent(new CustomEvent('edit-member', { detail: nd }))
+  emit('select-node', nd)
 }
 
 function refresh() {

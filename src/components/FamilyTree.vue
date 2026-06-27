@@ -5,17 +5,17 @@
     <div v-else class="tree-wrapper">
       <svg ref="svgRef" class="tree-svg" :width="svgWidth" :height="svgHeight">
         <g :transform="`translate(${padLeft},${padTop})`">
-          <!-- Líneas de matrimonio (horizontal) -->
+          <!-- Líneas de matrimonio -->
           <g class="marriage-lines">
             <line v-for="ln in marriageLines" :key="ln.id"
               :x1="ln.x1" :y1="ln.y1" :x2="ln.x2" :y2="ln.y2" />
           </g>
-          <!-- Líneas padre-hijo (vertical) -->
+          <!-- Líneas padre-hijo -->
           <g class="descent-lines">
             <line v-for="ln in descentLines" :key="ln.id"
               :x1="ln.x1" :y1="ln.y1" :x2="ln.x2" :y2="ln.y2" />
           </g>
-          <!-- Líneas de hermanos (horizontal entre siblings) -->
+          <!-- Líneas de hermanos -->
           <g class="sibling-lines">
             <line v-for="ln in siblingLines" :key="ln.id"
               :x1="ln.x1" :y1="ln.y1" :x2="ln.x2" :y2="ln.y2" />
@@ -25,12 +25,23 @@
             :transform="`translate(${nd.x},${nd.y})`"
             class="node-group"
             @click="onNodeClick(nd)">
-            <rect v-if="nd.gender === 'hombre'" x="-28" y="-18" width="56" height="36" rx="6" class="node-rect male" />
-            <rect v-else-if="nd.gender === 'mujer'" x="-28" y="-18" width="56" height="36" rx="14" class="node-rect female" />
-            <rect v-else x="-28" y="-18" width="56" height="36" rx="6" class="node-rect other" />
-            <image v-if="nd.photo" :href="nd.photo" x="-20" y="-14" width="28" height="28" class="node-photo" />
-            <text y="24" text-anchor="middle" class="node-name">{{ nd.label }}</text>
-            <text y="36" text-anchor="middle" class="node-dates">{{ nd.dates }}</text>
+            <!-- Fondo -->
+            <rect x="-60" y="-25" width="120" height="50" rx="8"
+              :class="['node-rect', genderClass(nd.gender)]" />
+            <!-- Foto si tiene -->
+            <image v-if="nd.photo" :href="nd.photo" x="-52" y="-17" width="34" height="34" class="node-photo" />
+            <!-- Nombre (truncado si muy largo) -->
+            <text x="0" y="-4" text-anchor="middle"
+              :font-size="fontSize(nd.label)" class="node-name"
+              :textLength="nd.photo ? 70 : 108" lengthAdjust="spacingAndGlyphs">
+              {{ nd.label }}
+            </text>
+            <!-- Fechas -->
+            <text v-if="nd.dates" x="0" y="14" text-anchor="middle"
+              font-size="10" class="node-dates"
+              textLength="110" lengthAdjust="spacingAndGlyphs">
+              {{ nd.dates }}
+            </text>
           </g>
         </g>
       </svg>
@@ -44,15 +55,27 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 const members = ref([])
 const svgRef = ref(null)
 
-const NODE_W = 56
-const NODE_H = 36
-const COUPLE_GAP = 12
-const FAMILY_GAP = 32
-const V_GAP = 110
-const padLeft = 40
-const padTop = 30
+const NODE_W = 120
+const NODE_H = 50
+const COUPLE_GAP = 16
+const FAMILY_GAP = 40
+const V_GAP = 120
+const padLeft = 60
+const padTop = 40
 const padBottom = 40
-const padRight = 40
+const padRight = 60
+
+function genderClass(g) {
+  if (g === 'hombre') return 'male'
+  if (g === 'mujer') return 'female'
+  return 'other'
+}
+
+function fontSize(name) {
+  if (name.length > 14) return 10
+  if (name.length > 10) return 11
+  return 12
+}
 
 function getLevels(membersArr) {
   const levels = {}
@@ -93,9 +116,9 @@ function buildLayout(membersArr) {
 
   for (let lvl = maxLevel; lvl >= 0; lvl--) {
     const levelMembers = byLevel[lvl] || []
-
-    // Collect parents of people at next level
     const nextLevelMembers = byLevel[lvl + 1] || []
+
+    // Build parent->children map for this level's parents
     const parentToChildren = {}
     for (const child of nextLevelMembers) {
       for (const pName of child.padres) {
@@ -106,37 +129,30 @@ function buildLayout(membersArr) {
       }
     }
 
-    // Group parents who share children (couples)
+    // Group into families: couples + singles
     const used = new Set()
-    const familyGroups = [] // each: { parents: [name], children: [name], width }
+    const familyGroups = []
 
     for (const m of levelMembers) {
       if (used.has(m.nombre)) continue
       const myChildren = parentToChildren[m.nombre] || []
-
-      // Find spouse that shares children
       const spouse = m.esposos.find(esp => {
         if (used.has(esp)) return false
-        const espLvl = levels[esp]
-        if (espLvl !== lvl) return false
-        const espChildren = parentToChildren[esp] || []
-        return espChildren.some(c => myChildren.includes(c))
+        return (levels[esp] === lvl) && (parentToChildren[esp] || []).some(c => myChildren.includes(c))
       })
 
       if (spouse) {
-        // Couple with shared children
         const sharedChildren = myChildren.filter(c => (parentToChildren[spouse] || []).includes(c))
         familyGroups.push({ parents: [m.nombre, spouse], children: sharedChildren })
         used.add(m.nombre)
         used.add(spouse)
       } else {
-        // Single person (or couple with own children)
         familyGroups.push({ parents: [m.nombre], children: myChildren })
         used.add(m.nombre)
       }
     }
 
-    // Position family groups left to right
+    // Position families left to right
     let cursorX = 0
 
     for (const group of familyGroups) {
@@ -146,11 +162,9 @@ function buildLayout(membersArr) {
         return child && levels[c] === lvl + 1
       })
 
-      // Calculate where children are positioned (next level already processed)
       const childX = childNames.map(n => pos[n]?.x).filter(x => x !== undefined)
 
-      if (childX.length > 0 && parentNames.length > 0) {
-        // Center parents above children
+      if (childX.length > 0) {
         const minCx = Math.min(...childX)
         const maxCx = Math.max(...childX)
         const centerX = (minCx + maxCx) / 2
@@ -163,10 +177,8 @@ function buildLayout(membersArr) {
         }
 
         const groupW = parentNames.length === 2 ? NODE_W * 2 + COUPLE_GAP : NODE_W
-        const leftEdge = centerX - groupW / 2
-        cursorX = Math.max(cursorX, leftEdge + groupW + FAMILY_GAP)
+        cursorX = Math.max(cursorX, centerX + groupW / 2 + FAMILY_GAP)
       } else {
-        // No children: place sequentially
         if (parentNames.length === 2) {
           pos[parentNames[0]] = { x: cursorX, y: lvl * V_GAP }
           pos[parentNames[1]] = { x: cursorX + NODE_W + COUPLE_GAP, y: lvl * V_GAP }
@@ -178,12 +190,10 @@ function buildLayout(membersArr) {
       }
     }
 
-    // Normalize to avoid negative X
+    // Normalize X
     const minX = Math.min(...Object.values(pos).map(p => p.x), 0)
     if (minX < 0) {
-      for (const p of Object.values(pos)) {
-        p.x -= minX
-      }
+      for (const p of Object.values(pos)) p.x -= minX
     }
   }
 
@@ -208,7 +218,6 @@ function buildLayout(membersArr) {
   const descentLines = []
   const siblingLines = []
 
-  // Marriage lines (horizontal between spouses)
   for (const m of membersArr) {
     for (const esp of m.esposos) {
       if (esp > m.nombre) {
@@ -227,7 +236,6 @@ function buildLayout(membersArr) {
     }
   }
 
-  // Descent lines (vertical from parents to children)
   for (const m of membersArr) {
     for (const child of m.hijos) {
       const p1 = pos[m.nombre]
@@ -244,7 +252,6 @@ function buildLayout(membersArr) {
     }
   }
 
-  // Sibling connector (horizontal line above siblings connecting to parents)
   for (const m of membersArr) {
     if (m.hermanos.length > 0) {
       const siblings = [m.nombre, ...m.hermanos].filter((v, i, a) => a.indexOf(v) === i)
@@ -253,7 +260,7 @@ function buildLayout(membersArr) {
         if (sPos.length > 1) {
           const minSx = Math.min(...sPos.map(p => p.x))
           const maxSx = Math.max(...sPos.map(p => p.x))
-          const sy = sPos[0].y - NODE_H / 2 - 6
+          const sy = sPos[0].y - NODE_H / 2 - 8
           siblingLines.push({
             id: `s-${m.nombre}`,
             x1: minSx,
@@ -261,7 +268,6 @@ function buildLayout(membersArr) {
             x2: maxSx,
             y2: sy
           })
-          // Small vertical connectors from sibling line down to each sibling
           for (const sp of sPos) {
             siblingLines.push({
               id: `sv-${m.nombre}-${sp.x}`,
@@ -276,10 +282,8 @@ function buildLayout(membersArr) {
     }
   }
 
-  // Calculate canvas dimensions
   const allX = Object.values(pos).map(p => p.x)
   const allY = Object.values(pos).map(p => p.y)
-  const minX = Math.min(...allX, 0)
   const maxX = Math.max(...allX, 600)
   const maxY = Math.max(...allY, 0)
 
@@ -288,7 +292,7 @@ function buildLayout(membersArr) {
     marriageLines,
     descentLines,
     siblingLines,
-    width: maxX - minX + NODE_W + padRight,
+    width: maxX + NODE_W + padRight,
     height: maxY + NODE_H + padBottom
   }
 }
@@ -331,14 +335,14 @@ onUnmounted(() => {
 .sibling-lines line { stroke: #f90; stroke-width: 2; stroke-dasharray: 4 3; }
 
 .node-group { cursor: pointer; }
-.node-group:hover .node-rect { stroke-width: 3; stroke: #333; }
+.node-group:hover .node-rect { filter: brightness(1.15); }
 
-.node-rect { stroke: #fff; stroke-width: 2; transition: stroke 0.2s; }
+.node-rect { stroke: #fff; stroke-width: 2; transition: filter 0.2s; }
 .node-rect.male { fill: #4a90d9; }
 .node-rect.female { fill: #e91e63; }
 .node-rect.other { fill: #7aa; }
 
 .node-photo { border-radius: 50%; object-fit: cover; pointer-events: none; }
-.node-name { fill: #fff; font-size: 12px; font-weight: 600; }
-.node-dates { fill: rgba(255,255,255,0.7); font-size: 10px; }
+.node-name { fill: #fff; font-weight: 600; }
+.node-dates { fill: rgba(255,255,255,0.75); }
 </style>

@@ -1,6 +1,6 @@
 :root {
-  --primary: #2e7d32;
-  --primary-hover: #1b5e20;
+  --primary: #43a047;
+  --primary-hover: #2e7d32;
   --bg: #c2c2c2;
   --text: #2a2a2a;
   --card: #d4d4d4;
@@ -8,17 +8,17 @@
   --border: #aaa;
   --muted: #6e6e6e;
   --tree-bg: #cacaca;
-  --tree-node-male: #5b9bd5;
-  --tree-node-female: #66bb6a;
-  --tree-node-other: #6b9e9e;
-  --tree-line-marriage: #2e7d32;
+  --tree-node-male: #4db6ac;
+  --tree-node-female: #81c784;
+  --tree-node-other: #8aadad;
+  --tree-line-marriage: #43a047;
   --tree-line-descent: #888;
   --tree-line-sibling: #d4911a;
 }
 
 [data-theme="dark"] {
-  --primary: #43a047;
-  --primary-hover: #388e3c;
+  --primary: #66bb6a;
+  --primary-hover: #4caf50;
   --bg: #1a1a2e;
   --text: #e0e0e0;
   --card: #2a2a3e;
@@ -26,10 +26,10 @@
   --border: #3a3a4e;
   --muted: #888;
   --tree-bg: #1e1e32;
-  --tree-node-male: #4a7fb5;
-  --tree-node-female: #4caf50;
-  --tree-node-other: #4d8a8a;
-  --tree-line-marriage: #388e3c;
+  --tree-node-male: #4db6ac;
+  --tree-node-female: #66bb6a;
+  --tree-node-other: #609696;
+  --tree-line-marriage: #4caf50;
   --tree-line-descent: #666;
   --tree-line-sibling: #bf8f1a;
 }

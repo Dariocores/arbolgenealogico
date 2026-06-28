@@ -2,6 +2,10 @@ export type Gender = 'hombre' | 'mujer' | 'otro'
 
 export type RelationType = 'padre' | 'hijo' | 'hermano' | 'esposo' | 'abuelo' | 'bisabuelo'
 
+export type ParentType = 'biologico' | 'adoptivo' | 'padrastro' | 'madrastra'
+
+export type MarriageStatus = 'casado' | 'divorciado' | 'separado' | 'viudo'
+
 export interface FamilyMember {
   id: string
   nombre: string
@@ -12,12 +16,18 @@ export interface FamilyMember {
   deathPlace: string
   biography: string
   photo: string
+  ocupacion: string
+  religion: string
+  notas: string
   padres: string[]
   hijos: string[]
   hermanos: string[]
   esposos: string[]
   abuelos: string[]
   bisabuelos: string[]
+  tipoPadre: Record<string, ParentType>
+  estadoMatrimonio: Record<string, MarriageStatus>
+  divorceDate: Record<string, string>
 }
 
 export interface Members {
@@ -28,8 +38,14 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9)
 }
 
+function isValidDate(d: string): boolean {
+  if (!d) return true
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(Date.parse(d))
+}
+
 export class FamilyTree {
   members: Members = {}
+  storageKey: string = 'familyTree'
 
   get memberCount(): number {
     return Object.keys(this.members).length
@@ -48,6 +64,13 @@ export class FamilyTree {
       throw new Error('El nombre no puede estar vacío')
     }
 
+    if (data?.birthDate && !isValidDate(data.birthDate)) {
+      throw new Error('Fecha de nacimiento inválida')
+    }
+    if (data?.deathDate && !isValidDate(data.deathDate)) {
+      throw new Error('Fecha de muerte inválida')
+    }
+
     if (this.members[nombre]) {
       const existing = this.members[nombre]
       existing.genero = genero
@@ -57,6 +80,9 @@ export class FamilyTree {
       if (data?.deathPlace) existing.deathPlace = data.deathPlace
       if (data?.biography) existing.biography = data.biography
       if (data?.photo) existing.photo = data.photo
+      if (data?.ocupacion) existing.ocupacion = data.ocupacion
+      if (data?.religion) existing.religion = data.religion
+      if (data?.notas) existing.notas = data.notas
       this.saveToStorage()
       return existing
     }
@@ -71,12 +97,18 @@ export class FamilyTree {
       deathPlace: data?.deathPlace || '',
       biography: data?.biography || '',
       photo: data?.photo || '',
+      ocupacion: data?.ocupacion || '',
+      religion: data?.religion || '',
+      notas: data?.notas || '',
       padres: [],
       hijos: [],
       hermanos: [],
       esposos: [],
       abuelos: [],
-      bisabuelos: []
+      bisabuelos: [],
+      tipoPadre: {},
+      estadoMatrimonio: {},
+      divorceDate: {}
     }
 
     this.members[nombre] = member
@@ -120,7 +152,12 @@ export class FamilyTree {
     return false
   }
 
-  addRelation(nombre: string, personaRelacionada: string, tipoRelacion: RelationType): void {
+  addRelation(
+    nombre: string,
+    personaRelacionada: string,
+    tipoRelacion: RelationType,
+    parentType?: ParentType
+  ): void {
     const m1 = this.addMember(nombre)
     const m2 = this.addMember(personaRelacionada)
 
@@ -130,6 +167,11 @@ export class FamilyTree {
       case 'padre':
         if (!m2.padres.includes(nombre)) {
           m2.padres.push(nombre)
+        }
+        if (parentType) {
+          m2.tipoPadre[nombre] = parentType
+        } else if (!m2.tipoPadre[nombre]) {
+          m2.tipoPadre[nombre] = 'biologico'
         }
         if (!m1.hijos.includes(personaRelacionada)) {
           m1.hijos.push(personaRelacionada)
@@ -141,6 +183,9 @@ export class FamilyTree {
       case 'hijo':
         if (!m1.padres.includes(personaRelacionada)) {
           m1.padres.push(personaRelacionada)
+        }
+        if (parentType) {
+          m1.tipoPadre[personaRelacionada] = parentType
         }
         if (!m2.hijos.includes(nombre)) {
           m2.hijos.push(nombre)
@@ -178,6 +223,12 @@ export class FamilyTree {
         if (!m2.esposos.includes(nombre)) {
           m2.esposos.push(nombre)
         }
+        if (!m1.estadoMatrimonio[personaRelacionada]) {
+          m1.estadoMatrimonio[personaRelacionada] = 'casado'
+        }
+        if (!m2.estadoMatrimonio[nombre]) {
+          m2.estadoMatrimonio[nombre] = 'casado'
+        }
         break
 
       case 'abuelo':
@@ -186,6 +237,9 @@ export class FamilyTree {
         }
         if (!m1.padres.includes(personaRelacionada)) {
           m1.padres.push(personaRelacionada)
+        }
+        if (parentType) {
+          m1.tipoPadre[personaRelacionada] = parentType
         }
         this._updateAbuelos(nombre)
         break
@@ -197,9 +251,80 @@ export class FamilyTree {
         if (!m1.padres.includes(personaRelacionada)) {
           m1.padres.push(personaRelacionada)
         }
+        if (parentType) {
+          m1.tipoPadre[personaRelacionada] = parentType
+        }
         this._updateAbuelos(nombre)
         break
     }
+    this.saveToStorage()
+  }
+
+  removeRelation(nombre: string, personaRelacionada: string, tipoRelacion: RelationType): void {
+    const m1 = this.members[nombre]
+    const m2 = this.members[personaRelacionada]
+    if (!m1 || !m2) throw new Error('Una de las personas no existe')
+
+    switch (tipoRelacion) {
+      case 'padre':
+        m2.padres = m2.padres.filter(p => p !== nombre)
+        m1.hijos = m1.hijos.filter(h => h !== personaRelacionada)
+        delete m2.tipoPadre[nombre]
+        this._updateHermanos(m1.hijos)
+        break
+      case 'hijo':
+        m1.padres = m1.padres.filter(p => p !== personaRelacionada)
+        m2.hijos = m2.hijos.filter(h => h !== nombre)
+        delete m1.tipoPadre[personaRelacionada]
+        this._updateHermanos(m2.hijos)
+        break
+      case 'hermano':
+        for (const h of [m1, m2]) {
+          const targets = tipoRelacion === 'hermano'
+            ? [nombre, personaRelacionada]
+            : []
+          h.hermanos = h.hermanos.filter(hh => hh !== (h === m1 ? personaRelacionada : nombre))
+        }
+        const allSiblings = new Set([...m1.hermanos, nombre, ...m2.hermanos, personaRelacionada])
+        for (const s1 of allSiblings) {
+          const s1m = this.members[s1]
+          if (s1m) {
+            s1m.hermanos = s1m.hermanos.filter(hh => hh !== (s1 === nombre ? personaRelacionada : nombre))
+          }
+        }
+        break
+      case 'esposo':
+        m1.esposos = m1.esposos.filter(e => e !== personaRelacionada)
+        m2.esposos = m2.esposos.filter(e => e !== nombre)
+        delete m1.estadoMatrimonio[personaRelacionada]
+        delete m2.estadoMatrimonio[nombre]
+        delete m1.divorceDate[personaRelacionada]
+        delete m2.divorceDate[nombre]
+        break
+    }
+    this.saveToStorage()
+  }
+
+  setMarriageStatus(nombre: string, con: string, estado: MarriageStatus, divorceDate?: string): void {
+    const m = this.members[nombre]
+    const p = this.members[con]
+    if (!m || !p) throw new Error('Persona no encontrada')
+    m.estadoMatrimonio[con] = estado
+    p.estadoMatrimonio[nombre] = estado
+    if (divorceDate) {
+      m.divorceDate[con] = divorceDate
+      p.divorceDate[nombre] = divorceDate
+    } else if (estado !== 'divorciado') {
+      delete m.divorceDate[con]
+      delete p.divorceDate[nombre]
+    }
+    this.saveToStorage()
+  }
+
+  setParentType(hijo: string, padre: string, tipo: ParentType): void {
+    const h = this.members[hijo]
+    if (!h) throw new Error('Persona no encontrada')
+    h.tipoPadre[padre] = tipo
     this.saveToStorage()
   }
 
@@ -248,7 +373,10 @@ export class FamilyTree {
 
     member.hijos.forEach(hijo => {
       const h = this.members[hijo]
-      if (h) h.padres = h.padres.filter(p => p !== nombre)
+      if (h) {
+        h.padres = h.padres.filter(p => p !== nombre)
+        delete h.tipoPadre[nombre]
+      }
     })
 
     member.hermanos.forEach(hermano => {
@@ -258,7 +386,11 @@ export class FamilyTree {
 
     member.esposos.forEach(esposo => {
       const e = this.members[esposo]
-      if (e) e.esposos = e.esposos.filter(es => es !== nombre)
+      if (e) {
+        e.esposos = e.esposos.filter(es => es !== nombre)
+        delete e.estadoMatrimonio[nombre]
+        delete e.divorceDate[nombre]
+      }
     })
 
     delete this.members[nombre]
@@ -267,13 +399,13 @@ export class FamilyTree {
 
   saveToStorage(): void {
     if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem('familyTree', JSON.stringify(this.members))
+      window.localStorage.setItem(this.storageKey, JSON.stringify(this.members))
     }
   }
 
   loadFromStorage(): void {
     if (typeof window !== 'undefined' && window.localStorage) {
-      const data = window.localStorage.getItem('familyTree')
+      const data = window.localStorage.getItem(this.storageKey)
       if (data) {
         this.members = JSON.parse(data)
         this._migrateMembers()
@@ -283,15 +415,19 @@ export class FamilyTree {
 
   private _migrateMembers(): void {
     for (const member of Object.values(this.members)) {
-      if (!member.id) {
-        member.id = generateId()
-      }
+      if (!member.id) member.id = generateId()
       if (member.birthDate === undefined) member.birthDate = ''
       if (member.deathDate === undefined) member.deathDate = ''
       if (member.birthPlace === undefined) member.birthPlace = ''
       if (member.deathPlace === undefined) member.deathPlace = ''
       if (member.biography === undefined) member.biography = ''
       if (member.photo === undefined) member.photo = ''
+      if (member.ocupacion === undefined) member.ocupacion = ''
+      if (member.religion === undefined) member.religion = ''
+      if (member.notas === undefined) member.notas = ''
+      if (!member.tipoPadre) member.tipoPadre = {}
+      if (!member.estadoMatrimonio) member.estadoMatrimonio = {}
+      if (!member.divorceDate) member.divorceDate = {}
     }
   }
 
@@ -324,12 +460,14 @@ export class FamilyTree {
   toGEDCOM(): string {
     const lines: string[] = []
     const members = Object.values(this.members)
-    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'SHORT', year: 'numeric' }).toUpperCase()
+    const d = new Date()
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+    const today = `${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`
 
     lines.push('0 HEAD')
     lines.push('1 SOUR ARBOLGENEALOGICO')
     lines.push('2 NAME Árbol Genealógico')
-    lines.push('2 VERS 1.0')
+    lines.push('2 VERS 2.0.0')
     lines.push('1 GEDC')
     lines.push('2 VERS 5.5.5')
     lines.push('2 FORM LINEAGE-LINKED')
@@ -344,11 +482,15 @@ export class FamilyTree {
       lines.push(`1 NAME ${m.nombre} /`)
       const sex = m.genero === 'hombre' ? 'M' : m.genero === 'mujer' ? 'F' : 'X'
       lines.push(`1 SEX ${sex}`)
+      if (m.ocupacion) lines.push(`1 OCCU ${m.ocupacion}`)
+      if (m.religion) lines.push(`1 RELI ${m.religion}`)
+      if (m.notas) lines.push(`1 NOTE ${m.notas}`)
       if (m.birthDate) {
         lines.push('1 BIRT')
         lines.push(`2 DATE ${m.birthDate}`)
       }
       if (m.birthPlace) {
+        if (!m.birthDate) lines.push('1 BIRT')
         lines.push(`2 PLAC ${m.birthPlace}`)
       }
       if (m.deathDate) {
@@ -356,6 +498,7 @@ export class FamilyTree {
         lines.push(`2 DATE ${m.deathDate}`)
       }
       if (m.deathPlace) {
+        if (!m.deathDate) lines.push('1 DEAT')
         lines.push(`2 PLAC ${m.deathPlace}`)
       }
     })
@@ -371,10 +514,22 @@ export class FamilyTree {
           lines.push(`0 @${fid}@ FAM`)
           if (hid) lines.push(`1 HUSB @${hid}@`)
           if (wid) lines.push(`1 WIFE @${wid}@`)
+          const estado = m.estadoMatrimonio?.[esposo]
+          if (estado && estado !== 'casado') {
+            lines.push(`1 STATUS ${estado.toUpperCase()}`)
+            const dd = m.divorceDate?.[esposo]
+            if (dd) lines.push(`2 DATE ${dd}`)
+          }
           const children = members.filter(c => c.padres.includes(m.nombre) && c.padres.includes(esposo))
           for (const child of children) {
             const cid = indiIds.get(child.nombre)
-            if (cid) lines.push(`1 CHIL @${cid}@`)
+            if (cid) {
+              lines.push(`1 CHIL @${cid}@`)
+              const pt = child.tipoPadre?.[m.nombre]
+              if (pt && pt !== 'biologico') {
+                lines.push(`2 PEDI ${pt.toUpperCase()}`)
+              }
+            }
           }
         }
       }
@@ -386,11 +541,19 @@ export class FamilyTree {
 
   fromGEDCOM(gedcom: string): void {
     const lines = gedcom.split('\n')
-    const indiMap = new Map<string, { id: string; nombre: string; genero: Gender; birthDate: string; deathDate: string; birthPlace: string; deathPlace: string }>()
-    const famMap = new Map<string, { husb?: string; wife?: string; chils: string[] }>()
+    const indiMap = new Map<string, {
+      id: string; nombre: string; genero: Gender;
+      birthDate: string; deathDate: string;
+      birthPlace: string; deathPlace: string;
+      ocupacion: string; religion: string; notas: string
+    }>()
+    const famMap = new Map<string, {
+      husb?: string; wife?: string; chils: { id: string; pedi?: string }[]
+    }>()
     let currentId = ''
     let currentType = ''
     let currentEvent = ''
+    let currentPedi = ''
 
     for (const line of lines) {
       const match = line.match(/^(\d+)\s+(?:@(\w+)@\s+)?(\w+)(?:\s+(.+))?$/)
@@ -404,7 +567,7 @@ export class FamilyTree {
         if (tag === 'INDI' && id) {
           currentType = 'INDI'
           currentId = id
-          indiMap.set(id, { id, nombre: '', genero: 'otro', birthDate: '', deathDate: '', birthPlace: '', deathPlace: '' })
+          indiMap.set(id, { id, nombre: '', genero: 'otro', birthDate: '', deathDate: '', birthPlace: '', deathPlace: '', ocupacion: '', religion: '', notas: '' })
         } else if (tag === 'FAM' && id) {
           currentType = 'FAM'
           currentId = id
@@ -413,6 +576,7 @@ export class FamilyTree {
           currentType = ''
         }
         currentEvent = ''
+        currentPedi = ''
       } else if (level === 1) {
         if (currentType === 'INDI') {
           const indi = indiMap.get(currentId)
@@ -425,6 +589,12 @@ export class FamilyTree {
               currentEvent = 'BIRT'
             } else if (tag === 'DEAT') {
               currentEvent = 'DEAT'
+            } else if (tag === 'OCCU') {
+              indi.ocupacion = value
+            } else if (tag === 'RELI') {
+              indi.religion = value
+            } else if (tag === 'NOTE') {
+              indi.notas = value
             } else {
               currentEvent = ''
             }
@@ -434,7 +604,11 @@ export class FamilyTree {
           if (fam) {
             if (tag === 'HUSB') fam.husb = value.replace(/@/g, '').trim()
             else if (tag === 'WIFE') fam.wife = value.replace(/@/g, '').trim()
-            else if (tag === 'CHIL') fam.chils.push(value.replace(/@/g, '').trim())
+            else if (tag === 'CHIL') {
+              const childId = value.replace(/@/g, '').trim()
+              fam.chils.push({ id: childId, pedi: undefined })
+              currentPedi = childId
+            }
           }
         }
       } else if (level === 2) {
@@ -449,6 +623,12 @@ export class FamilyTree {
               else if (currentEvent === 'DEAT') indi.deathPlace = value
             }
           }
+        } else if (currentType === 'FAM' && tag === 'PEDI') {
+          const fam = famMap.get(currentId)
+          if (fam && fam.chils.length > 0) {
+            const last = fam.chils[fam.chils.length - 1]
+            last.pedi = value.toLowerCase()
+          }
         }
       }
     }
@@ -461,7 +641,10 @@ export class FamilyTree {
           birthDate: indi.birthDate,
           deathDate: indi.deathDate,
           birthPlace: indi.birthPlace,
-          deathPlace: indi.deathPlace
+          deathPlace: indi.deathPlace,
+          ocupacion: indi.ocupacion,
+          religion: indi.religion,
+          notas: indi.notas
         })
       }
     }
@@ -474,20 +657,28 @@ export class FamilyTree {
         this.addRelation(husbName, wifeName, 'esposo')
       }
 
-      for (const childId of fam.chils) {
-        const childName = indiMap.get(childId)?.nombre
+      for (const childRef of fam.chils) {
+        const childName = indiMap.get(childRef.id)?.nombre
         if (childName) {
           if (husbName && this.members[husbName]) {
-            this.addRelation(husbName, childName, 'padre')
+            this.addRelation(husbName, childName, 'padre', childRef.pedi as ParentType)
           }
           if (wifeName && this.members[wifeName]) {
-            this.addRelation(wifeName, childName, 'padre')
+            this.addRelation(wifeName, childName, 'padre', childRef.pedi as ParentType)
           }
         }
       }
     }
 
     this.saveToStorage()
+  }
+
+  getMarriageStatus(nombre: string, con: string): MarriageStatus {
+    return this.members[nombre]?.estadoMatrimonio?.[con] || 'casado'
+  }
+
+  getParentType(hijo: string, padre: string): ParentType {
+    return this.members[hijo]?.tipoPadre?.[padre] || 'biologico'
   }
 }
 

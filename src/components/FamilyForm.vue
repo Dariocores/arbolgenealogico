@@ -1,6 +1,5 @@
 <template>
   <div class="family-form">
-    <!-- PESTAÑAS -->
     <div class="tabs">
       <button :class="['tab', { active: tab === 'persona' }]" @click="tab = 'persona'">
         1. Agregar Persona
@@ -10,9 +9,8 @@
       </button>
     </div>
 
-    <!-- PESTAÑA 1: AGREGAR PERSONA -->
     <form v-show="tab === 'persona'" @submit.prevent="addPersona" class="section">
-      <p class="section-desc">Completa los datos y presiona <strong>Guardar Persona</strong>. Después usa la pestaña "Conectar Familiares" para definir sus relaciones.</p>
+      <p class="section-desc">Completa los datos y presiona <strong>Guardar Persona</strong>.</p>
 
       <div class="field-row">
         <div class="field">
@@ -44,9 +42,29 @@
         </div>
       </div>
 
+      <div class="field-row">
+        <div class="field">
+          <label for="input-ocupacion">Ocupación</label>
+          <input id="input-ocupacion" v-model="ocupacion" placeholder="Ej: Ingeniero" />
+        </div>
+        <div class="field">
+          <label for="input-religion">Religión</label>
+          <input id="input-religion" v-model="religion" placeholder="Ej: Católica" />
+        </div>
+      </div>
+
       <div class="field">
-        <label for="input-foto">URL de foto (opcional)</label>
-        <input id="input-foto" v-model="photo" type="url" placeholder="https://ejemplo.com/foto.jpg" />
+        <label for="input-foto">Foto</label>
+        <div class="photo-upload">
+          <input id="input-foto" type="file" accept="image/*" @change="onPhotoChange" />
+          <img v-if="photoPreview" :src="photoPreview" class="photo-preview" alt="Vista previa" />
+          <button v-if="photoPreview" type="button" class="btn-small" @click="removePhoto">Quitar foto</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="input-notas">Notas / Biografía</label>
+        <textarea id="input-notas" v-model="notas" placeholder="Información adicional..." rows="3"></textarea>
       </div>
 
       <button type="submit" class="btn-primary" :disabled="!!errorMsg">
@@ -58,7 +76,6 @@
       <div v-if="errorMsg" class="msg error">{{ errorMsg }}</div>
     </form>
 
-    <!-- PESTAÑA 2: CONECTAR FAMILIARES -->
     <div v-show="tab === 'relacion'" class="section">
       <p class="section-desc">
         Seleccioná dos personas ya registradas y elegí qué parentesco las une.
@@ -94,6 +111,25 @@
         </div>
       </div>
 
+      <div v-if="relTipo === 'padre' || relTipo === 'hijo'" class="field" style="margin-bottom:12px">
+        <label for="select-parent-type">Tipo de parentesco</label>
+        <select id="select-parent-type" v-model="relParentType">
+          <option value="biologico">Biológico</option>
+          <option value="adoptivo">Adoptivo</option>
+          <option value="padrastro">Padrastro / Madrastra</option>
+        </select>
+      </div>
+
+      <div v-if="relTipo === 'esposo'" class="field" style="margin-bottom:12px">
+        <label for="select-marriage-status">Estado civil</label>
+        <select id="select-marriage-status" v-model="relMarriageStatus">
+          <option value="casado">Casado</option>
+          <option value="separado">Separado</option>
+          <option value="divorciado">Divorciado</option>
+          <option value="viudo">Viudo</option>
+        </select>
+      </div>
+
       <button type="button" class="btn-primary" :disabled="!relPersonaA || !relPersonaB || !relTipo" @click="addRelacion">
         Conectar Familiares
       </button>
@@ -104,13 +140,26 @@
       <hr />
 
       <h4>Relaciones existentes</h4>
-      <div v-if="allMembers.length === 0" class="msg info">Aún no hay personas registradas.</div>
+      <p v-if="allMembers.length === 0" class="msg info">Aún no hay personas registradas.</p>
       <div v-for="m in allMembers" :key="'rel-'+m.nombre" class="relacion-list-item">
         <strong>{{ m.nombre }}</strong>
-        <span v-if="m.padres.length" class="rel-tag">Hijo de: {{ m.padres.join(', ') }}</span>
-        <span v-if="m.hijos.length" class="rel-tag">Padre de: {{ m.hijos.join(', ') }}</span>
-        <span v-if="m.hermanos.length" class="rel-tag">Hermano de: {{ m.hermanos.join(', ') }}</span>
-        <span v-if="m.esposos.length" class="rel-tag">Pareja de: {{ m.esposos.join(', ') }}</span>
+        <span v-if="m.padres.length" class="rel-tag" v-for="p in m.padres" :key="'pad-'+m.nombre+'-'+p">
+          Hijo de {{ p }}
+          <button class="btn-unlink" @click="removeRel(m.nombre, p, 'padre')" title="Desvincular">x</button>
+        </span>
+        <span v-if="m.hijos.length" class="rel-tag" v-for="h in m.hijos" :key="'hij-'+m.nombre+'-'+h">
+          Padre de {{ h }}
+          <button class="btn-unlink" @click="removeRel(m.nombre, h, 'hijo')" title="Desvincular">x</button>
+        </span>
+        <span v-if="m.hermanos.length" class="rel-tag" v-for="h in m.hermanos.slice(0,5)" :key="'her-'+m.nombre+'-'+h">
+          Hermano de {{ h }}
+          <button class="btn-unlink" @click="removeRel(m.nombre, h, 'hermano')" title="Desvincular">x</button>
+        </span>
+        <span v-if="m.hermanos.length > 5" class="rel-tag">+{{ m.hermanos.length - 5 }} más</span>
+        <span v-if="m.esposos.length" class="rel-tag" v-for="e in m.esposos" :key="'esp-'+m.nombre+'-'+e">
+          {{ getMarriageLabel(m, e) }}
+          <button class="btn-unlink" @click="removeRel(m.nombre, e, 'esposo')" title="Desvincular">x</button>
+        </span>
         <span v-if="m.abuelos.length" class="rel-tag">Nieto de: {{ m.abuelos.join(', ') }}</span>
       </div>
     </div>
@@ -131,15 +180,21 @@ const tab = ref('persona')
 const name = ref('')
 const gender = ref('otro')
 const photo = ref('')
+const photoPreview = ref('')
 const birthDate = ref('')
 const deathDate = ref('')
 const birthPlace = ref('')
+const ocupacion = ref('')
+const religion = ref('')
+const notas = ref('')
 const editing = ref(false)
 const originalName = ref('')
 
 const relPersonaA = ref('')
 const relPersonaB = ref('')
 const relTipo = ref('')
+const relParentType = ref('biologico')
+const relMarriageStatus = ref('casado')
 
 const errorMsg = ref('')
 const successMsg = ref('')
@@ -150,13 +205,25 @@ const allMembers = computed(() => {
   return window.__FAMILY_TREE__ ? Object.values(window.__FAMILY_TREE__.members) : []
 })
 
-const selectableMembers = computed(() => {
-  return allMembers.value.filter(m => m.nombre !== name.value.trim())
-})
-
 function clearMessages() {
   errorMsg.value = ''
   successMsg.value = ''
+}
+
+function onPhotoChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    photoPreview.value = ev.target.result
+    photo.value = ev.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
+function removePhoto() {
+  photo.value = ''
+  photoPreview.value = ''
 }
 
 function addPersona() {
@@ -173,7 +240,10 @@ function addPersona() {
       birthDate: birthDate.value,
       deathDate: deathDate.value,
       birthPlace: birthPlace.value,
-      photo: photo.value
+      photo: photo.value,
+      ocupacion: ocupacion.value,
+      religion: religion.value,
+      notas: notas.value
     }
     if (editing.value) {
       if (originalName.value && originalName.value !== name.value.trim()) {
@@ -201,6 +271,12 @@ function addPersona() {
   }
 }
 
+function getMarriageLabel(m, esposo) {
+  const estado = m.estadoMatrimonio?.[esposo] || 'casado'
+  const labels = { casado: 'Pareja de', divorciado: 'Ex-pareja de', separado: 'Separado de', viudo: 'Viudo de' }
+  return `${labels[estado] || 'Pareja de'} ${esposo}`
+}
+
 function addRelacion() {
   relErrorMsg.value = ''
   relSuccessMsg.value = ''
@@ -212,7 +288,13 @@ function addRelacion() {
   const tree = window.__FAMILY_TREE__
   if (!tree) return
   try {
-    tree.addRelation(relPersonaA.value, relPersonaB.value, relTipo.value)
+    const parentType = relTipo.value === 'padre' || relTipo.value === 'hijo' ? relParentType.value : undefined
+    tree.addRelation(relPersonaA.value, relPersonaB.value, relTipo.value, parentType)
+
+    if (relTipo.value === 'esposo' && relMarriageStatus.value !== 'casado') {
+      tree.setMarriageStatus(relPersonaA.value, relPersonaB.value, relMarriageStatus.value)
+    }
+
     tree.saveToStorage()
     const tipoLabel = {
       padre: 'padre/madre de',
@@ -225,8 +307,24 @@ function addRelacion() {
     relPersonaA.value = ''
     relPersonaB.value = ''
     relTipo.value = ''
+    relParentType.value = 'biologico'
+    relMarriageStatus.value = 'casado'
   } catch (e) {
     relErrorMsg.value = e.message || 'Error desconocido.'
+    console.error(e)
+  }
+}
+
+function removeRel(persona, relacionada, tipo) {
+  if (!confirm(`¿Desvincular "${persona}" de "${relacionada}" (${tipo})?`)) return
+  const tree = window.__FAMILY_TREE__
+  if (!tree) return
+  try {
+    tree.removeRelation(persona, relacionada, tipo)
+    tree.saveToStorage()
+    relSuccessMsg.value = `Relación "${tipo}" eliminada entre "${persona}" y "${relacionada}".`
+  } catch (e) {
+    relErrorMsg.value = e.message || 'Error al desvincular.'
     console.error(e)
   }
 }
@@ -236,9 +334,13 @@ function startEdit(member) {
   name.value = member.nombre
   gender.value = member.genero || 'otro'
   photo.value = member.photo || ''
+  photoPreview.value = member.photo || ''
   birthDate.value = member.birthDate || ''
   deathDate.value = member.deathDate || ''
   birthPlace.value = member.birthPlace || ''
+  ocupacion.value = member.ocupacion || ''
+  religion.value = member.religion || ''
+  notas.value = member.notas || ''
   editing.value = true
   originalName.value = member.nombre
   tab.value = 'persona'
@@ -256,9 +358,13 @@ function resetForm() {
   name.value = ''
   gender.value = 'otro'
   photo.value = ''
+  photoPreview.value = ''
   birthDate.value = ''
   deathDate.value = ''
   birthPlace.value = ''
+  ocupacion.value = ''
+  religion.value = ''
+  notas.value = ''
 }
 
 watch(() => props.member, (m) => {
@@ -294,8 +400,8 @@ watch(() => props.member, (m) => {
 
 .tab.active {
   background: var(--card, #fff);
-  color: var(--primary, #2e7d32);
-  border-bottom: 3px solid var(--primary, #2e7d32);
+  color: var(--primary, #00897b);
+  border-bottom: 3px solid var(--primary, #00897b);
   margin-bottom: -2px;
 }
 
@@ -336,7 +442,8 @@ watch(() => props.member, (m) => {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   padding: 8px 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -346,9 +453,16 @@ watch(() => props.member, (m) => {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.field textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
 .field input:focus,
-.field select:focus {
-  border-color: var(--primary, #2e7d32);
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--primary, #00897b);
   outline: none;
   box-shadow: 0 0 0 2px rgba(0, 137, 123, 0.2);
 }
@@ -358,9 +472,34 @@ watch(() => props.member, (m) => {
   background: #fee;
 }
 
+.photo-upload {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.photo-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border, #ccc);
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 0.85em;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 4px;
+  background: var(--card, #fff);
+  color: var(--muted, #666);
+  cursor: pointer;
+}
+
 .btn-primary {
   padding: 10px 20px;
-  background: var(--primary, #2e7d32);
+  background: var(--primary, #00897b);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -371,7 +510,7 @@ watch(() => props.member, (m) => {
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--primary-hover, #1b5e20);
+  background: var(--primary-hover, #00695c);
   transform: translateY(-1px);
 }
 
@@ -427,6 +566,24 @@ hr {
   border-radius: 4px;
   font-size: 0.85em;
   color: var(--muted, #555);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-unlink {
+  background: none;
+  border: none;
+  color: #c62828;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.9em;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.btn-unlink:hover {
+  color: #b71c1c;
 }
 
 .msg {

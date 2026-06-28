@@ -10,7 +10,9 @@ app.use(createPinia())
 app.use(router)
 
 const store = useFamilyStore()
-store.loadFromStorage()
+store.loadTreeList()
+const savedTree = localStorage.getItem('familyTree_current')
+store.switchTree(savedTree || 'default')
 window.__FAMILY_TREE__ = store.tree
 
 app.mount('#app')

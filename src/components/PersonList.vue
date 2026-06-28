@@ -10,22 +10,60 @@
     </select>
     <ul role="list" aria-labelledby="personas-heading">
       <li v-for="p of sortedPeople" :key="p.nombre" tabindex="0" style="outline:none;display:flex;align-items:center;gap:8px">
-        <img v-if="getAvatar(p.nombre)" :src="getAvatar(p.nombre)" alt="Avatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
+        <img v-if="p.photo" :src="p.photo" alt="Avatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />
         <span>{{ p.nombre }} <small>({{ p.genero }})</small></span>
         <button @click="openEditModal(p)" aria-label="Editar {{p.nombre}}">Editar</button>
+        <button @click="showRelations(p)" aria-label="Relaciones {{p.nombre}}">Relaciones</button>
         <button @click="deleteMember(p)" aria-label="Eliminar {{p.nombre}}">Eliminar</button>
       </li>
     </ul>
-    <div v-if="saveFeedback" class="save-feedback">
-      {{ saveFeedback }}
-      <button v-if="window.lastDeleteSnapshot" @click="undoDelete">Deshacer</button>
+
+    <div v-if="showRelationModal" class="modal-overlay" @click.self="closeRelationModal" role="dialog" aria-modal="true" aria-label="Relaciones">
+      <div class="modal">
+        <h4>Relaciones de {{ relationTarget?.nombre }}</h4>
+        <div class="rel-group" v-if="relationTarget?.padres?.length">
+          <strong>Hijo de:</strong>
+          <span v-for="p in relationTarget.padres" :key="'pr-'+p" class="rel-tag">
+            {{ p }} ({{ relationTarget.tipoPadre?.[p] || 'biológico' }})
+            <button class="btn-unlink" @click="removeRel(relationTarget.nombre, p, 'padre')">x</button>
+          </span>
+        </div>
+        <div class="rel-group" v-if="relationTarget?.hijos?.length">
+          <strong>Padre de:</strong>
+          <span v-for="h in relationTarget.hijos" :key="'ph-'+h" class="rel-tag">
+            {{ h }}
+            <button class="btn-unlink" @click="removeRel(relationTarget.nombre, h, 'hijo')">x</button>
+          </span>
+        </div>
+        <div class="rel-group" v-if="relationTarget?.esposos?.length">
+          <strong>Parejas:</strong>
+          <span v-for="e in relationTarget.esposos" :key="'pe-'+e" class="rel-tag">
+            {{ e }} ({{ relationTarget.estadoMatrimonio?.[e] || 'casado' }})
+            <button class="btn-unlink" @click="removeRel(relationTarget.nombre, e, 'esposo')">x</button>
+          </span>
+        </div>
+        <div class="rel-group" v-if="relationTarget?.hermanos?.length">
+          <strong>Hermanos:</strong>
+          <span v-for="h in relationTarget.hermanos" :key="'phh-'+h" class="rel-tag">
+            {{ h }}
+            <button class="btn-unlink" @click="removeRel(relationTarget.nombre, h, 'hermano')">x</button>
+          </span>
+        </div>
+        <button @click="closeRelationModal" style="margin-top:10px">Cerrar</button>
+      </div>
     </div>
+
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal" role="dialog" aria-modal="true" aria-label="Editar miembro">
       <div class="modal">
         <h4>Editar miembro</h4>
         <FamilyForm :member="editingMember" @close="closeModal" @saved="closeModal" />
         <button @click="closeModal" style="margin-top:10px">Cerrar</button>
       </div>
+    </div>
+
+    <div v-if="saveFeedback" class="save-feedback">
+      {{ saveFeedback }}
+      <button v-if="window.lastDeleteSnapshot" @click="undoDelete">Deshacer</button>
     </div>
   </div>
 </template>
@@ -43,6 +81,8 @@ const sortKey = ref('name')
 const showModal = ref(false)
 const editingMember = ref(null)
 const saveFeedback = ref('')
+const showRelationModal = ref(false)
+const relationTarget = ref(null)
 
 function refresh() {
   const tree = window.__FAMILY_TREE__
@@ -68,9 +108,39 @@ function openEditModal(member) {
   editingMember.value = { ...member }
   showModal.value = true
 }
+
 function closeModal() {
   showModal.value = false
   editingMember.value = null
+}
+
+function showRelations(member) {
+  relationTarget.value = member
+  showRelationModal.value = true
+}
+
+function closeRelationModal() {
+  showRelationModal.value = false
+  relationTarget.value = null
+}
+
+function removeRel(persona, relacionada, tipo) {
+  if (!confirm(`¿Desvincular "${persona}" de "${relacionada}"?`)) return
+  const tree = window.__FAMILY_TREE__
+  if (!tree) return
+  try {
+    tree.removeRelation(persona, relacionada, tipo)
+    tree.saveToStorage()
+    refresh()
+    if (relationTarget.value) {
+      relationTarget.value = tree.getMember(relationTarget.value.nombre)
+    }
+    saveFeedback.value = 'Relación eliminada.'
+    setTimeout(() => { saveFeedback.value = '' }, 2000)
+  } catch (e) {
+    saveFeedback.value = 'Error: ' + e.message
+    setTimeout(() => { saveFeedback.value = '' }, 3000)
+  }
 }
 
 function deleteMember(member) {
@@ -119,9 +189,38 @@ li { padding:4px 0; color: var(--text, #333); }
   padding: 24px 20px;
   border-radius: 10px;
   min-width: 320px;
+  max-width: 500px;
   box-shadow: 0 2px 16px #0002;
   transition: background 0.3s;
- }
+}
+.rel-group {
+  margin: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.rel-tag {
+  background: var(--bg, #f0f0f0);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: var(--muted, #555);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-unlink {
+  background: none;
+  border: none;
+  color: #c62828;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.9em;
+  padding: 0 2px;
+  line-height: 1;
+}
+.btn-unlink:hover { color: #b71c1c; }
 @media (max-width: 600px) {
   .modal {
     min-width: 90vw;

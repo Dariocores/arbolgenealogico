@@ -25,6 +25,7 @@
             :transform="`translate(${nd.x},${nd.y})`"
             class="node-group"
             @click="onNodeClick(nd)">
+            <title>{{ nd.tooltip }}</title>
             <!-- Fondo -->
             <rect x="-60" y="-25" width="120" height="50" rx="8"
               :class="['node-rect', genderClass(nd.genero)]" />
@@ -229,6 +230,18 @@ function buildLayout(membersArr) {
   // Build render nodes
   const nodes = membersArr.map(m => {
     const p = pos[m.nombre] || { x: 0, y: 0 }
+    const props = []
+    if (m.ocupacion) props.push(m.ocupacion)
+    if (m.religion) props.push(m.religion)
+    if (m.birthPlace) props.push('Lugar: ' + m.birthPlace)
+    const parentTypes = Object.entries(m.tipoPadre || {})
+      .filter(([,t]) => t !== 'biologico')
+      .map(([p, t]) => `${p}: ${t}`)
+    if (parentTypes.length) props.push('Padres: ' + parentTypes.join(', '))
+    const tooltipLines = [m.nombre]
+    if (m.birthDate || m.deathDate) tooltipLines.push([m.birthDate, m.deathDate].filter(Boolean).join(' - '))
+    if (props.length) tooltipLines.push(props.join(' | '))
+    if (m.notas) tooltipLines.push(m.notas.slice(0, 100))
     return {
       id: m.id || m.nombre,
       label: m.nombre,
@@ -239,6 +252,7 @@ function buildLayout(membersArr) {
       deathDate: m.deathDate || '',
       birthPlace: m.birthPlace || '',
       dates: [m.birthDate, m.deathDate].filter(Boolean).join(' - '),
+      tooltip: tooltipLines.join('\n'),
       x: p.x,
       y: p.y
     }

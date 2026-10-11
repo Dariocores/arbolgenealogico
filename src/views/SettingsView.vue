@@ -1,225 +1,305 @@
 <template>
-  <div class="settings-view" :class="theme">
-    <div class="settings-container">
-      <h2>Configuración</h2>
+  <div class="settings-view">
+    <h2>Configuración</h2>
 
-      <section class="settings-section">
-        <h3>Árboles</h3>
-        <div class="tree-list">
-          <div v-for="t in store.treeList" :key="t" class="tree-item" :class="{ active: t === store.treeName }">
-            <span class="tree-name" @click="switchTree(t)">{{ t }}</span>
-            <button v-if="t !== 'default'" class="btn-small" @click="deleteTree(t)">Eliminar</button>
-          </div>
-        </div>
-        <div class="tree-create">
-          <input v-model="newTreeName" placeholder="Nombre del nuevo árbol" @keyup.enter="createTree" />
-          <button @click="createTree" class="btn btn-primary">Crear Árbol</button>
-        </div>
-      </section>
+    <section class="settings-section">
+      <h3>Información del árbol</h3>
+      <div class="info-grid">
+        <div><span class="label">Árbol:</span> {{ store.treeName }}</div>
+        <div><span class="label">ID activo:</span> {{ store.activeTreeId }}</div>
+        <div><span class="label">Raíz:</span> {{ store.rootPersonId || '—' }}</div>
+        <div><span class="label">Miembros:</span> {{ store.totalMembers }}</div>
+        <div><span class="label">Relaciones:</span> {{ store.relationships.length }}</div>
+      </div>
+    </section>
 
-      <section class="settings-section">
-        <h3>Información del Árbol</h3>
-        <div class="info-block">
-          <p><strong>Árbol actual:</strong> {{ store.treeName }}</p>
-          <p><strong>Total de miembros:</strong> {{ memberCount }}</p>
-          <p v-if="rootMember"><strong>Miembro raíz:</strong> {{ rootMember.nombre }}</p>
-          <p v-else><strong>Estado:</strong> No hay miembros</p>
-          <p><strong>Almacenamiento:</strong> localStorage</p>
-        </div>
-      </section>
+    <section class="settings-section">
+      <h3>Exportar / Importar</h3>
+      <div class="button-group">
+        <button class="btn btn-primary" @click="exportJSON">Exportar JSON</button>
+        <button class="btn btn-secondary" @click="exportGEDCOMFile">
+          Exportar GEDCOM (.ged)
+        </button>
+        <button class="btn btn-primary" :disabled="exporting" @click="exportTreePNG">
+          {{ exporting ? 'Generando…' : 'Exportar árbol (PNG)' }}
+        </button>
+        <button class="btn btn-secondary" @click="exportTreeSVG">
+          Exportar árbol (SVG)
+        </button>
+        <button class="btn btn-secondary" @click="jsonInput?.click()">
+          Importar JSON
+        </button>
+        <button class="btn btn-secondary" @click="gedcomInput?.click()">
+          Importar GEDCOM (.ged)
+        </button>
+      </div>
+      <p class="settings-hint">
+        Las imágenes muestran el árbol tal como se ve en la vista Árbol.
+      </p>
+      <input
+        ref="jsonInput"
+        type="file"
+        accept=".json,application/json"
+        class="hidden-input"
+        @change="importJSON"
+      />
+      <input
+        ref="gedcomInput"
+        type="file"
+        accept=".ged,text/plain"
+        class="hidden-input"
+        @change="importGEDCOM"
+      />
+      <p v-if="message" class="feedback">{{ message }}</p>
+    </section>
 
-      <section class="settings-section">
-        <h3>Exportar / Importar</h3>
-        <div class="button-group">
-          <button @click="exportJSON" class="btn btn-primary">Exportar JSON</button>
-          <button @click="exportGEDCOM" class="btn btn-secondary">Exportar GEDCOM (.ged)</button>
-          <button @click="showImportJSON" class="btn btn-secondary">Importar JSON</button>
-          <button @click="showImportGEDCOM" class="btn btn-secondary">Importar GEDCOM (.ged)</button>
-          <input ref="jsonInput" type="file" accept=".json" @change="importJSON" style="display:none" />
-          <input ref="gedcomInput" type="file" accept=".ged" @change="importGEDCOM" style="display:none" />
-        </div>
-      </section>
+    <section class="settings-section">
+      <h3>Modelo de datos</h3>
+      <p class="settings-note">
+        Arquitectura basada en tipos <code>Person</code> y
+        <code>Relationship</code> con el store <code>familyTree</code>
+        (ID-based). Migra automáticamente datos antiguos de localStorage y
+        soporta GEDCOM 5.5.5.
+      </p>
+    </section>
 
-      <section class="settings-section">
-        <h3>Opción Peligrosa</h3>
-        <div class="warning-box">
-          <p>Estas acciones no se pueden deshacer</p>
-          <button @click="confirmClear" class="btn btn-danger">Limpiar Todo el Árbol</button>
-        </div>
-      </section>
+    <section class="settings-section danger">
+      <h3>Zona peligrosa</h3>
+      <p class="settings-note">Esta acción no se puede deshacer.</p>
+      <button class="btn btn-danger" @click="confirmClear">
+        Limpiar todo el árbol
+      </button>
+    </section>
 
-      <section class="settings-section">
-        <h3>Información</h3>
-        <div class="info-block">
-          <p><strong>Versión:</strong> 2.0.0</p>
-          <p><strong>Framework:</strong> Vue.js 3</p>
-          <p><strong>Build Tool:</strong> Vite</p>
-          <p><strong>Formato:</strong> JSON nativo + GEDCOM 5.5.5</p>
-        </div>
-      </section>
-
-      <section class="settings-section">
-        <h3>Tema</h3>
-        <div class="theme-options">
-          <label><input v-model="theme" type="radio" value="light" @change="applyTheme" /> Claro</label>
-          <label><input v-model="theme" type="radio" value="dark" @change="applyTheme" /> Oscuro</label>
-          <label><input v-model="theme" type="radio" value="auto" @change="applyTheme" /> Automático</label>
-        </div>
-      </section>
-
-      <router-link to="/tree" class="btn btn-primary" style="display:block;text-align:center;margin-top:30px;">
-        Volver al Árbol
-      </router-link>
-    </div>
+    <section class="settings-section">
+      <h3>Personas registradas</h3>
+      <ul class="person-preview">
+        <li v-for="p in people" :key="p.id">
+          <span class="mono">{{ p.id }}</span> — {{ p.firstName }} {{ p.lastName }}
+        </li>
+      </ul>
+    </section>
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
-import { useFamilyStore } from '../stores/pinia'
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { useFamilyTreeStore } from '@/stores/familyTree';
+import {
+  buildTreeSvg,
+  svgToPngBlob,
+  downloadBlob,
+  downloadTextFile,
+} from '@/utils/svgExport';
 
-const store = useFamilyStore()
-const memberCount = computed(() => store.memberCount)
-const rootMember = computed(() => store.rootMember)
+const store = useFamilyTreeStore();
+const people = computed(() => Object.values(store.persons));
 
-const jsonInput = ref(null)
-const gedcomInput = ref(null)
-const theme = ref(localStorage.getItem('theme') || 'light')
-const newTreeName = ref('')
+const jsonInput = ref<HTMLInputElement | null>(null);
+const gedcomInput = ref<HTMLInputElement | null>(null);
+const message = ref('');
+const exporting = ref(false);
 
-function applyTheme() {
-  localStorage.setItem('theme', theme.value)
-  document.documentElement.setAttribute('data-theme', theme.value)
+function download(filename: string, content: string, mime: string): void {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
-function switchTree(name) {
-  store.switchTree(name)
-  localStorage.setItem('familyTree_current', name)
+function exportJSON(): void {
+  download(
+    `${store.activeTreeId}.json`,
+    JSON.stringify(store.toTreeData(), null, 2),
+    'application/json',
+  );
+  message.value = 'JSON exportado.';
 }
 
-function createTree() {
-  const name = newTreeName.value.trim()
-  if (!name) return
-  if (store.createTree(name)) {
-    localStorage.setItem('familyTree_current', name)
-    newTreeName.value = ''
-  } else {
-    alert('Ese nombre ya existe')
+function exportGEDCOMFile(): void {
+  download(`${store.activeTreeId}.ged`, store.exportGEDCOM(), 'text/plain');
+  message.value = 'GEDCOM exportado.';
+}
+
+function treeSvgMarkup(): string {
+  return buildTreeSvg(store.persons, store.relationships, {
+    title: store.treeName,
+  });
+}
+
+function exportTreeSVG(): void {
+  downloadTextFile(
+    `${store.activeTreeId}-arbol.svg`,
+    buildTreeSvg(store.persons, store.relationships, { title: store.treeName }),
+    'image/svg+xml',
+  );
+  message.value = 'Árbol exportado como SVG.';
+}
+
+async function exportTreePNG(): Promise<void> {
+  exporting.value = true;
+  try {
+    const svg = buildTreeSvg(store.persons, store.relationships, {
+      title: store.treeName,
+    });
+    const blob = await svgToPngBlob(svg);
+    downloadBlob(`${store.activeTreeId}.png`, blob);
+    message.value = 'Árbol exportado como PNG.';
+  } catch {
+    message.value = 'No se pudo generar la imagen del árbol.';
+  } finally {
+    exporting.value = false;
   }
 }
 
-function deleteTree(name) {
-  if (confirm(`¿Eliminar el árbol "${name}"?`)) {
-    store.deleteTree(name)
-    localStorage.setItem('familyTree_current', 'default')
+function readFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
+async function importJSON(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await readFile(file));
+    store.importJSON(data);
+    message.value = `Importado: ${store.totalMembers} personas.`;
+  } catch {
+    message.value = 'Error al importar el JSON.';
+  } finally {
+    input.value = '';
   }
 }
 
-function exportJSON() {
-  const data = store.tree.toJSON()
-  const json = JSON.stringify(data, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `arbol-${store.treeName}-${new Date().toISOString().split('T')[0]}.json`
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function exportGEDCOM() {
-  const ged = store.tree.toGEDCOM()
-  const blob = new Blob([ged], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `arbol-${store.treeName}-${new Date().toISOString().split('T')[0]}.ged`
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function showImportJSON() {
-  jsonInput.value?.click()
-}
-
-function showImportGEDCOM() {
-  gedcomInput.value?.click()
-}
-
-function importJSON(event) {
-  const file = event.target.files?.[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    try {
-      const data = JSON.parse(e.target.result)
-      store.tree.fromJSON(data)
-      store.saveToStorage()
-      alert('Datos JSON importados correctamente')
-    } catch (err) {
-      alert('Error al importar JSON: ' + err.message)
-    }
-  }
-  reader.readAsText(file)
-}
-
-function importGEDCOM(event) {
-  const file = event.target.files?.[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    try {
-      store.tree.fromGEDCOM(e.target.result)
-      alert('Datos GEDCOM importados correctamente')
-    } catch (err) {
-      alert('Error al importar GEDCOM: ' + err.message)
-    }
-  }
-  reader.readAsText(file)
-}
-
-function confirmClear() {
-  if (confirm('Confirmación: eliminar TODO el árbol genealógico?')) {
-    if (confirm('Ultima confirmación: Deseas continuar?')) {
-      store.clearTree()
-      alert('Árbol limpiado')
-    }
+async function importGEDCOM(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    store.importGEDCOM(await readFile(file));
+    message.value = `Importado: ${store.totalMembers} personas.`;
+  } catch {
+    message.value = 'Error al importar el GEDCOM.';
+  } finally {
+    input.value = '';
   }
 }
 
-if (localStorage.getItem('theme')) {
-  document.documentElement.setAttribute('data-theme', localStorage.getItem('theme'))
+function confirmClear(): void {
+  if (confirm('¿Limpiar todo el árbol? Esta acción no se puede deshacer.')) {
+    store.clearTree();
+    message.value = 'Árbol limpiado.';
+  }
 }
 </script>
 
 <style scoped>
-.settings-view { padding: 20px; }
-.settings-container { max-width: 600px; margin: 0 auto; }
-.settings-container h2 { font-size: 32px; color: var(--card-text, #222); margin-bottom: 30px; }
-.settings-section { background: var(--card, #fff); padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: background 0.3s; }
-.settings-section h3 { margin-top: 0; margin-bottom: 15px; color: var(--card-text, #333); }
-.info-block { background: var(--bg, #f5f5f5); padding: 15px; border-radius: 6px; transition: background 0.3s; }
-.info-block p { margin: 8px 0; color: var(--muted, #666); }
-.warning-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
-.warning-box p { margin: 0 0 15px 0; color: #856404; font-weight: 600; }
-.button-group { display: flex; gap: 10px; flex-wrap: wrap; }
-.btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-.btn-primary { background: var(--primary, #00897b); color: white; }
-.btn-primary:hover { background: var(--primary-hover, #00695c); transform: translateY(-2px); }
-.btn-secondary { background: var(--muted, #6e6e6e); color: white; }
-.btn-secondary:hover { background: #555; }
-.btn-danger { background: #d32f2f; color: white; width: 100%; }
-.btn-danger:hover { background: #b71c1c; transform: translateY(-2px); }
-.theme-options { display: flex; gap: 20px; }
-.theme-options label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text, #666); }
-.theme-options input[type="radio"] { cursor: pointer; }
-.tree-list { margin-bottom: 12px; }
-.tree-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
-.tree-item:hover { background: var(--bg, #f0f0f0); }
-.tree-item.active { background: var(--primary, #00897b); color: #fff; }
-.tree-item.active .btn-small { color: #fff; border-color: #fff; }
-.tree-name { font-weight: 600; }
-.btn-small { padding: 2px 8px; font-size: 0.85em; border: 1px solid var(--border, #ccc); border-radius: 4px; background: transparent; cursor: pointer; color: var(--muted, #666); }
-.tree-create { display: flex; gap: 8px; }
-.tree-create input { flex: 1; padding: 8px 10px; border: 1px solid var(--border, #ccc); border-radius: 6px; font-size: 0.95em; }
+.settings-view {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.settings-view h2 {
+  margin-bottom: 20px;
+}
+
+.settings-section {
+  padding: 20px;
+  background: var(--card);
+  color: var(--card-text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+
+.settings-section h3 {
+  margin-bottom: 14px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  font-size: 0.92em;
+}
+
+.label {
+  color: var(--muted);
+}
+
+.settings-note {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--on-primary, #fff);
+}
+
+.btn-secondary {
+  background: var(--border);
+  color: var(--text);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.feedback {
+  margin-top: 12px;
+  font-size: 0.9em;
+  color: var(--primary);
+}
+
+.danger {
+  border-color: var(--danger);
+}
+
+code {
+  background: var(--input-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.person-preview {
+  list-style: none;
+  padding: 0;
+  font-size: 0.9em;
+  line-height: 2;
+}
+
+.mono {
+  font-family: ui-monospace, monospace;
+  color: var(--muted);
+}
 </style>

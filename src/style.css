@@ -1,37 +1,73 @@
 :root {
-  --primary: #00897b;
-  --primary-hover: #00695c;
+  --danger: #dc2626;
   --bg: #c8dce8;
   --text: #1e2a30;
-  --card: #d6e6f0;
+  --card: #ffffff;
   --card-text: #1e2a30;
-  --border: #a8c0cc;
+  --border: #cbd5e1;
   --muted: #5a7a88;
-  --tree-bg: #cee0ec;
-  --tree-node-male: #4db6ac;
-  --tree-node-female: #81c784;
-  --tree-node-other: #8aadad;
-  --tree-line-marriage: #00897b;
-  --tree-line-descent: #888;
-  --tree-line-sibling: #d4911a;
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --tree-bg: #f8fafc;
+  --tree-node-male: #a8d5f5;
+  --tree-node-female: #f7c8dc;
+  --tree-node-other: #d8dce0;
+  --tree-node-text: #1f2937;
+  --tree-line-descent: #94a3b8;
 }
 
-[data-theme="dark"] {
-  --primary: #26a69a;
-  --primary-hover: #00897b;
+[data-theme='dark'] {
+  --danger: #ef5350;
   --bg: #121a24;
   --text: #d0d8e0;
   --card: #1c2634;
   --card-text: #d0d8e0;
   --border: #2a3648;
-  --muted: #6a8090;
+  --muted: #8aa0b0;
+  --input-bg: #16202e;
+  --input-border: #334455;
   --tree-bg: #16202e;
-  --tree-node-male: #4db6ac;
-  --tree-node-female: #66bb6a;
-  --tree-node-other: #609696;
-  --tree-line-marriage: #26a69a;
-  --tree-line-descent: #666;
-  --tree-line-sibling: #bf8f1a;
+  --tree-node-male: #7fb6e0;
+  --tree-node-female: #e0a0bd;
+  --tree-node-other: #a8b0b8;
+  --tree-node-text: #16202e;
+  --tree-line-descent: #666666;
+}
+
+/* Paletas de acento. El color primario (botones, barra, enlaces y línea de
+   matrimonio) cambia según el tema elegido. --on-primary define el color del
+   texto sobre el acento (oscuro para acentos claros). */
+:root,
+[data-accent='teal'] {
+  --primary: #00897b;
+  --primary-hover: #00695c;
+  --tree-line-marriage: #00897b;
+  --on-primary: #ffffff;
+  --on-primary-soft: rgba(255, 255, 255, 0.16);
+}
+
+[data-accent='petrol'] {
+  --primary: #1b4d5c;
+  --primary-hover: #143a46;
+  --tree-line-marriage: #1b4d5c;
+  --on-primary: #ffffff;
+  --on-primary-soft: rgba(255, 255, 255, 0.16);
+}
+
+[data-accent='orange'] {
+  --primary: #d97736;
+  --primary-hover: #b85f24;
+  --tree-line-marriage: #d97736;
+  --on-primary: #ffffff;
+  --on-primary-soft: rgba(255, 255, 255, 0.16);
+}
+
+[data-accent='light'] {
+  --primary: #ebf1f5;
+  --primary-hover: #d6e0e7;
+  --tree-line-marriage: #9db4c0;
+  --on-primary: #1b4d5c;
+  --on-primary-soft: rgba(27, 77, 92, 0.12);
 }
 
 body {

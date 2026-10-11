@@ -52,6 +52,12 @@ cuatro colores de acento: **Verde azulado**, **Azul petróleo**, **Naranja** y
 **Claro**. El color elegido se aplica a la barra, los botones y las líneas del
 árbol. Ambas preferencias se recuerdan en tu navegador.
 
+> **Cuenta y licencia.** Si la aplicación está publicada en **modo nube**, vas a
+> necesitar **crear una cuenta** e **iniciar sesión**. Cada cuenta tiene una
+> **licencia mensual** que habilita el administrador: si no está activa, vas a ver
+> una pantalla para solicitar la activación. En **modo local** (sin cuenta) no
+> hace falta iniciar sesión y los datos quedan solo en tu navegador.
+
 ---
 
 ## 3. Gestión de personas

@@ -60,6 +60,19 @@
             {{ isDark ? '☀' : '☾' }}
           </button>
         </div>
+        <template v-if="auth.isConfigured">
+          <router-link v-if="!auth.isLoggedIn" to="/ingresar" class="nav-link">
+            Ingresar
+          </router-link>
+          <div v-else class="account">
+            <span class="account-email" :title="auth.email ?? ''">
+              {{ auth.email }}
+            </span>
+            <button class="logout-btn" type="button" @click="onLogout">
+              Salir
+            </button>
+          </div>
+        </template>
       </div>
     </nav>
     <main>
@@ -70,6 +83,16 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+
+const auth = useAuthStore();
+const router = useRouter();
+
+async function onLogout(): Promise<void> {
+  await auth.signOut();
+  await router.push('/ingresar');
+}
 
 const THEME_KEY = 'familyTree_v2_theme';
 const ACCENT_KEY = 'familyTree_v2_accent';
@@ -224,6 +247,41 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   margin-left: 8px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.account-email {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85em;
+  color: var(--on-primary);
+  opacity: 0.9;
+}
+
+.logout-btn {
+  border: 1px solid var(--on-primary);
+  background: transparent;
+  color: var(--on-primary);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.85em;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.logout-btn:hover {
+  background: var(--on-primary-soft);
+  opacity: 1;
 }
 
 .accent-picker {

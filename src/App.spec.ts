@@ -1,6 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/vue';
 import { createPinia } from 'pinia';
+
+vi.mock('@/lib/supabase', () => ({
+  isSupabaseConfigured: false,
+  supabase: null,
+}));
+
 import App from '@/App.vue';
 import router from '@/router/index';
 

@@ -8,11 +8,17 @@ y el proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 ## [No publicado]
 
 ### Agregado
+- **Modo nube con autenticación** (Supabase): inicio de sesión, registro y
+  pantalla de cuenta inactiva. Es *opt-in*: si no se configuran las claves, la
+  app sigue en modo local.
+- **Esquema de backend con licencia manual** (`supabase/schema.sql`): tablas
+  `profiles` y `trees`, políticas RLS que bloquean el acceso sin licencia
+  vigente, rol `admin` y funciones `grant_license` / `revoke_license`.
 - Selector de **color de acento** ("Temas") junto al cambio de modo claro/oscuro,
   con cuatro paletas (Verde azulado, Azul petróleo, Naranja y Claro) y preferencia
   persistida en el navegador.
 - **Exportación del árbol** a imagen **PNG** y **SVG** desde Configuración.
-- `MANUAL.md` con el manual de uso para la persona usuaria.
+- `MANUAL.md` con el manual de uso para la persona usuaria y `MANUAL.pdf`.
 - Módulos de utilidades y tipos: `layout`, `relationships`, `svgExport`,
   `treeRender`, `gedcom`, `labels`, `migrate` y `types/genealogy`.
 

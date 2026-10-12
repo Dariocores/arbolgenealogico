@@ -117,6 +117,12 @@ function legendGroup(theme: Theme, x: number, y: number): string {
         `<path d="M6 0 L12 6 L6 12 L0 6 Z" fill="none" stroke="${theme.nodeText}" stroke-width="1.2"/>`,
       'Consultante',
     ],
+    [
+      `<rect x="0" y="2" width="5" height="8" fill="${theme.male}" stroke="#ffffff" stroke-width="1"/>` +
+        `<rect x="7" y="2" width="5" height="8" fill="${theme.male}" stroke="#ffffff" stroke-width="1"/>` +
+        `<line x1="5" y1="6" x2="7" y2="6" stroke="${theme.descent}" stroke-width="2"/>`,
+      'Mellizos',
+    ],
   ];
 
   const parts: string[] = [];
@@ -201,6 +207,10 @@ function buildSvg(
     if (link.type === 'spouse') {
       parts.push(
         `<path d="${link.path}" fill="none" stroke="${theme.marriage}" stroke-width="2" stroke-dasharray="6 4"/>`,
+      );
+    } else if (link.type === 'twin') {
+      parts.push(
+        `<path d="${link.path}" fill="none" stroke="${theme.descent}" stroke-width="3"/>`,
       );
     } else {
       parts.push(

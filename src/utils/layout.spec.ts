@@ -482,4 +482,27 @@ describe('computeLayout', () => {
     expect(byId.s1.generation).toBe(byId.s2.generation);
     expect(byId.s1.x).toBeLessThan(byId.s2.x);
   });
+
+  it('une con un link de mellizos a hermanos con la misma fecha de nacimiento', () => {
+    const persons: Record<string, Person> = {
+      padre: { ...person('padre', 'Padre', 'Gomez'), gender: 'male' },
+      madre: { ...person('madre', 'Madre', 'Gomez'), gender: 'female' },
+      twinA: { ...person('twinA', 'Twin', 'A'), birthDate: '2000-05-05' },
+      twinB: { ...person('twinB', 'Twin', 'B'), birthDate: '2000-05-05' },
+      otro: { ...person('otro', 'Otro', 'Gomez'), birthDate: '2005-01-01' },
+    };
+    const relationships: Relationship[] = [
+      { id: '1', personId1: 'padre', personId2: 'madre', type: 'spouse' },
+      { id: '2', personId1: 'padre', personId2: 'twinA', type: 'parent_child' },
+      { id: '3', personId1: 'madre', personId2: 'twinA', type: 'parent_child' },
+      { id: '4', personId1: 'padre', personId2: 'twinB', type: 'parent_child' },
+      { id: '5', personId1: 'madre', personId2: 'twinB', type: 'parent_child' },
+      { id: '6', personId1: 'padre', personId2: 'otro', type: 'parent_child' },
+      { id: '7', personId1: 'madre', personId2: 'otro', type: 'parent_child' },
+    ];
+
+    const layout = computeLayout(persons, relationships);
+    const twinLinks = layout.links.filter((l) => l.type === 'twin');
+    expect(twinLinks).toHaveLength(1);
+  });
 });

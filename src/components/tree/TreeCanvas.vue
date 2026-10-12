@@ -268,6 +268,14 @@ watch(
         </svg>
         Consultante
       </span>
+      <span class="legend-item">
+        <svg viewBox="0 0 18 18" class="legend-svg">
+          <rect x="1" y="5" width="7" height="8" class="legend-male" />
+          <rect x="10" y="5" width="7" height="8" class="legend-male" />
+          <line x1="8" y1="9" x2="10" y2="9" class="legend-twin" />
+        </svg>
+        Mellizos
+      </span>
       <span class="legend-item">I, II, III · generación</span>
       <span class="legend-item">1, 2, 3 · orden</span>
     </div>
@@ -343,6 +351,11 @@ watch(
 
 :deep(.tree-link.descent) {
   stroke: var(--tree-line-descent);
+}
+
+:deep(.tree-link.twin) {
+  stroke: var(--tree-line-descent);
+  stroke-width: 3;
 }
 
 :deep(.node) {
@@ -491,6 +504,11 @@ watch(
   fill: none;
   stroke: var(--tree-node-text);
   stroke-width: 1.5;
+}
+
+.legend-twin {
+  stroke: var(--tree-line-descent);
+  stroke-width: 2;
 }
 
 .legend-death {

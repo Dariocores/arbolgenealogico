@@ -1,4 +1,5 @@
 import type { Person, Relationship } from '@/types/genealogy';
+import { isTwin } from '@/utils/siblings';
 
 export interface LayoutNode {
   id: string;
@@ -10,7 +11,7 @@ export interface LayoutNode {
 
 export interface LayoutLink {
   id: string;
-  type: 'spouse' | 'descent';
+  type: 'spouse' | 'descent' | 'twin';
   path: string;
 }
 
@@ -591,6 +592,30 @@ export function computeLayout(
       type: 'descent',
       path: `M ${ax} ${ay} V ${midY} H ${cx} V ${cy}`,
     });
+  }
+
+  // Mellizos/gemelos: se unen con una línea horizontal entre sus símbolos.
+  for (let i = 0; i < people.length; i += 1) {
+    for (let j = i + 1; j < people.length; j += 1) {
+      const a = people[i];
+      const b = people[j];
+      if (!isTwin(a, b)) continue;
+      const parentsA = parentMap.get(a.id) || [];
+      const parentsB = parentMap.get(b.id) || [];
+      if (!parentsA.some((p) => parentsB.includes(p))) continue;
+      const na = nodeById.get(a.id);
+      const nb = nodeById.get(b.id);
+      if (!na || !nb) continue;
+      const [left, right] = na.x <= nb.x ? [na, nb] : [nb, na];
+      const y = left.y + SYMBOL_CY;
+      const x1 = left.x + NODE_W / 2 + SYMBOL / 2;
+      const x2 = right.x + NODE_W / 2 - SYMBOL / 2;
+      links.push({
+        id: `twin-${left.id}-${right.id}`,
+        type: 'twin',
+        path: `M ${x1} ${y} L ${x2} ${y}`,
+      });
+    }
   }
 
   let maxX = -Infinity;

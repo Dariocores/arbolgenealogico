@@ -36,6 +36,7 @@
 
           <div class="relations">
             <p><strong>Padres:</strong> {{ formatRelated(parents, 'parent') }}</p>
+            <p><strong>Hermanos:</strong> {{ formatSiblings(siblings) }}</p>
             <p><strong>Hijos:</strong> {{ formatRelated(children, 'child') }}</p>
             <p><strong>Parejas:</strong> {{ formatList(spouses) }}</p>
           </div>
@@ -54,9 +55,12 @@ import {
   childRoleLabel,
   genderLabel,
   isBiological,
+  nonBornShortLabel,
   parentRoleLabel,
+  siblingRankLabel,
 } from '@/utils/labels';
 import { isParentType } from '@/utils/relationships';
+import { getSiblings, type Sibling } from '@/utils/siblings';
 import type { Person, RelationshipType } from '@/types/genealogy';
 
 const store = useFamilyTreeStore();
@@ -87,6 +91,24 @@ const children = computed<RelatedPerson[]>(() => {
 const spouses = computed<Person[]>(() =>
   store.selectedPersonId ? store.getSpouses(store.selectedPersonId) : [],
 );
+
+const siblings = computed<Sibling[]>(() =>
+  store.selectedPersonId
+    ? getSiblings(store.selectedPersonId, store.persons, store.relationships)
+    : [],
+);
+
+function formatSiblings(list: Sibling[]): string {
+  if (!list.length) return '—';
+  return list
+    .map(({ person, rank }) => {
+      const name = `${person.firstName} ${person.lastName}`.trim() || '(sin nombre)';
+      const label = siblingRankLabel(rank, person.gender);
+      const extra = person.nonBorn ? `, ${nonBornShortLabel(person.nonBorn)}` : '';
+      return `${name} (${label}${extra})`;
+    })
+    .join(', ');
+}
 
 function formatList(list: Person[]): string {
   if (!list.length) return '—';

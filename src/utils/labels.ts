@@ -1,4 +1,5 @@
 import type { Gender, NonBornStatus, RelationshipType } from '@/types/genealogy';
+import type { SiblingRank } from '@/utils/siblings';
 
 const GENDER_LABELS: Record<Gender, string> = {
   male: 'Masculino',
@@ -11,6 +12,28 @@ const GENDER_LABELS: Record<Gender, string> = {
 export function genderLabel(gender: Gender | undefined): string {
   if (!gender) return '—';
   return GENDER_LABELS[gender] ?? 'Desconocido';
+}
+
+// Etiqueta del vínculo fraterno según el rango y el género de la persona.
+export function siblingRankLabel(rank: SiblingRank, gender?: Gender): string {
+  const female = gender === 'female';
+  switch (rank) {
+    case 'mayor':
+      return female ? 'hermana mayor' : 'hermano mayor';
+    case 'menor':
+      return female ? 'hermana menor' : 'hermano menor';
+    case 'mellizo':
+      return female ? 'melliza/gemela' : 'mellizo/gemelo';
+    default:
+      return 'hermano/a';
+  }
+}
+
+export function nonBornShortLabel(status: NonBornStatus | undefined): string {
+  if (status === 'miscarriage') return 'no nacido/a, A.E';
+  if (status === 'abortion') return 'no nacido/a, A.P';
+  if (status === 'stillborn') return 'no nacido/a, N.N';
+  return 'no nacido/a';
 }
 
 const NON_BORN_LABELS: Record<NonBornStatus, string> = {

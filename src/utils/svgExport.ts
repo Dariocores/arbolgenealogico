@@ -185,8 +185,8 @@ function buildSvg(
     return { svg, box: { x: 0, y: 0, width, height } };
   }
 
-  const width = Math.max(layout.width + padding * 2, 360);
-  const height = titleH + layout.height + legendH + padding;
+  const width = Math.ceil(Math.max(layout.width + padding * 2, 360));
+  const height = Math.ceil(titleH + layout.height + legendH + padding);
 
   const byGeneration = new Map<number, typeof layout.nodes>();
   for (const n of layout.nodes) {
@@ -313,13 +313,17 @@ export function downloadTextFile(
   downloadBlob(filename, new Blob([content], { type: `${mime};charset=utf-8` }));
 }
 
+export function svgDimensions(svg: string): { width: number; height: number } {
+  const match = svg.match(/<svg\b[^>]*?\bwidth="([\d.]+)"\s+height="([\d.]+)"/);
+  if (!match) return { width: 1200, height: 800 };
+  return { width: Math.ceil(Number(match[1])), height: Math.ceil(Number(match[2])) };
+}
+
 export async function svgToPngBlob(
   svg: string,
   scale = 2,
 ): Promise<Blob> {
-  const match = svg.match(/width="(\d+)"\s+height="(\d+)"/);
-  const width = match ? Number(match[1]) : 1200;
-  const height = match ? Number(match[2]) : 800;
+  const { width, height } = svgDimensions(svg);
 
   const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(svgBlob);
@@ -332,13 +336,19 @@ export async function svgToPngBlob(
       img.src = url;
     });
 
+    const renderWidth = image.naturalWidth || width;
+    const renderHeight = image.naturalHeight || height;
+
     const canvas = document.createElement('canvas');
-    canvas.width = width * scale;
-    canvas.height = height * scale;
+    canvas.width = Math.ceil(renderWidth * scale);
+    canvas.height = Math.ceil(renderHeight * scale);
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('No hay contexto 2D');
-    ctx.scale(scale, scale);
-    ctx.drawImage(image, 0, 0);
+    ctx.scale(
+      canvas.width / renderWidth,
+      canvas.height / renderHeight,
+    );
+    ctx.drawImage(image, 0, 0, renderWidth, renderHeight);
 
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((blob) => {

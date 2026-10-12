@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildTreeSvg } from '@/utils/svgExport';
+import { buildTreeSvg, svgDimensions } from '@/utils/svgExport';
 import type { Person, Relationship } from '@/types/genealogy';
 
 function person(id: string, firstName: string, lastName: string): Person {
@@ -44,5 +44,16 @@ describe('buildTreeSvg', () => {
     const svg = buildTreeSvg(persons, []);
     expect(svg).toContain('Ana &amp; &lt;Luz&gt;');
     expect(svg).not.toContain('<Luz>');
+  });
+
+  it('svgDimensions lee el tamaño real del root y no el de la leyenda', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1080.567" height="700.25" viewBox="0 0 1080.567 700.25">' +
+      '<rect width="12" height="12" fill="#000"/></svg>';
+    expect(svgDimensions(svg)).toEqual({ width: 1081, height: 701 });
+  });
+
+  it('svgDimensions usa el fallback si no hay medidas', () => {
+    expect(svgDimensions('<svg/>')).toEqual({ width: 1200, height: 800 });
   });
 });

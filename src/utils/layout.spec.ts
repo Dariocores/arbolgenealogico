@@ -266,6 +266,62 @@ describe('computeLayout', () => {
     expect(byId.hMayor.x).toBeLessThan(byId.hMenor.x);
   });
 
+  it('alinea los padres de ambos cónyuges aunque un lado tenga abuelos', () => {
+    const persons: Record<string, Person> = {
+      h: { ...person('h', 'Hugo', 'Gomez'), gender: 'male' },
+      w: { ...person('w', 'Wanda', 'Diaz'), gender: 'female' },
+      wf: { ...person('wf', 'Waldo', 'Diaz'), gender: 'male' },
+      wm: { ...person('wm', 'Wanda M', 'Diaz'), gender: 'female' },
+      hf: { ...person('hf', 'Hector', 'Gomez'), gender: 'male' },
+      hm: { ...person('hm', 'Helena', 'Gomez'), gender: 'female' },
+      hgf: { ...person('hgf', 'Horacio', 'Gomez'), gender: 'male' },
+      hgm: { ...person('hgm', 'Hilda', 'Gomez'), gender: 'female' },
+    };
+    const relationships: Relationship[] = [
+      { id: '1', personId1: 'h', personId2: 'w', type: 'spouse' },
+      { id: '2', personId1: 'wf', personId2: 'w', type: 'parent_child' },
+      { id: '3', personId1: 'wm', personId2: 'w', type: 'parent_child' },
+      { id: '4', personId1: 'wf', personId2: 'wm', type: 'spouse' },
+      { id: '5', personId1: 'hf', personId2: 'h', type: 'parent_child' },
+      { id: '6', personId1: 'hm', personId2: 'h', type: 'parent_child' },
+      { id: '7', personId1: 'hf', personId2: 'hm', type: 'spouse' },
+      { id: '8', personId1: 'hgf', personId2: 'hf', type: 'parent_child' },
+      { id: '9', personId1: 'hgm', personId2: 'hf', type: 'parent_child' },
+    ];
+
+    const layout = computeLayout(persons, relationships);
+    const byId = Object.fromEntries(layout.nodes.map((n) => [n.id, n]));
+
+    // Los cuatro padres (suegros incluidos) comparten la misma generación.
+    expect(byId.hf.generation).toBe(byId.wf.generation);
+    expect(byId.hm.generation).toBe(byId.wm.generation);
+    // Los abuelos quedan una fila por encima de los padres.
+    expect(byId.hgf.generation).toBe(byId.hf.generation - 1);
+    // La pareja queda por debajo de sus padres.
+    expect(byId.h.generation).toBe(byId.hf.generation + 1);
+  });
+
+  it('ubica al hombre a la izquierda y a la mujer a la derecha en cada pareja', () => {
+    const persons: Record<string, Person> = {
+      abuelo: { ...person('abuelo', 'Abuelo', 'Perez'), gender: 'male' },
+      abuela: { ...person('abuela', 'Abuela', 'Perez'), gender: 'female' },
+      novio: { ...person('novio', 'Novio', 'Lopez'), gender: 'male' },
+      novia: { ...person('novia', 'Novia', 'Perez'), gender: 'female' },
+    };
+    const relationships: Relationship[] = [
+      { id: '1', personId1: 'abuelo', personId2: 'abuela', type: 'spouse' },
+      { id: '2', personId1: 'abuelo', personId2: 'novia', type: 'parent_child' },
+      { id: '3', personId1: 'abuela', personId2: 'novia', type: 'parent_child' },
+      { id: '4', personId1: 'novio', personId2: 'novia', type: 'spouse' },
+    ];
+
+    const layout = computeLayout(persons, relationships);
+    const byId = Object.fromEntries(layout.nodes.map((n) => [n.id, n]));
+
+    expect(byId.novio.x).toBeLessThan(byId.novia.x);
+    expect(byId.abuelo.x).toBeLessThan(byId.abuela.x);
+  });
+
   it('ignora relaciones que referencian personas inexistentes', () => {
     const persons: Record<string, Person> = { a: person('a', 'Ana', 'Perez') };
     const relationships: Relationship[] = [
@@ -357,5 +413,73 @@ describe('computeLayout', () => {
     const match = alvaroLine?.path.match(/^M ([\d.]+) [\d.]+ V [\d.]+ H ([\d.]+) /);
     expect(match).toBeTruthy();
     expect(match?.[1]).toBe(match?.[2]);
+  });
+
+  it('sitúa a los padres biológicos y adoptivos a la misma altura', () => {
+    const persons: Record<string, Person> = {
+      bioP: { ...person('bioP', 'Bio', 'Padre'), gender: 'male' },
+      bioM: { ...person('bioM', 'Bio', 'Madre'), gender: 'female' },
+      adP: { ...person('adP', 'Adoptivo', 'Padre'), gender: 'male' },
+      adM: { ...person('adM', 'Adoptiva', 'Madre'), gender: 'female' },
+      hijo: { ...person('hijo', 'Hijo', 'Adoptado'), birthDate: '2010-05-05' },
+    };
+    const relationships: Relationship[] = [
+      { id: '1', personId1: 'bioP', personId2: 'bioM', type: 'spouse' },
+      { id: '2', personId1: 'adP', personId2: 'adM', type: 'spouse' },
+      { id: '3', personId1: 'bioP', personId2: 'hijo', type: 'parent_child' },
+      { id: '4', personId1: 'bioM', personId2: 'hijo', type: 'parent_child' },
+      { id: '5', personId1: 'adP', personId2: 'hijo', type: 'adoptive' },
+      { id: '6', personId1: 'adM', personId2: 'hijo', type: 'adoptive' },
+    ];
+
+    const layout = computeLayout(persons, relationships);
+    const byId = Object.fromEntries(layout.nodes.map((n) => [n.id, n]));
+
+    expect(byId.bioP.generation).toBe(byId.adP.generation);
+    expect(byId.bioM.generation).toBe(byId.adM.generation);
+    expect(byId.bioP.y).toBe(byId.adP.y);
+    expect(byId.hijo.generation).toBe(byId.bioP.generation + 1);
+  });
+
+  it('ordena a los hermanos por fecha de concepción cuando falta la de nacimiento', () => {
+    const persons: Record<string, Person> = {
+      padre: { ...person('padre', 'Padre', 'Gomez'), gender: 'male' },
+      madre: { ...person('madre', 'Madre', 'Gomez'), gender: 'female' },
+      noNacido: {
+        ...person('noNacido', 'No', 'Nacido'),
+        conceptionDate: '1980-01-01',
+        nonBorn: 'miscarriage',
+      },
+      nacido: { ...person('nacido', 'Nacido', 'Gomez'), birthDate: '1982-03-01' },
+    };
+    const relationships: Relationship[] = [
+      { id: '1', personId1: 'padre', personId2: 'madre', type: 'spouse' },
+      { id: '2', personId1: 'padre', personId2: 'noNacido', type: 'parent_child' },
+      { id: '3', personId1: 'madre', personId2: 'noNacido', type: 'parent_child' },
+      { id: '4', personId1: 'padre', personId2: 'nacido', type: 'parent_child' },
+      { id: '5', personId1: 'madre', personId2: 'nacido', type: 'parent_child' },
+    ];
+
+    const layout = computeLayout(persons, relationships);
+    const byId = Object.fromEntries(layout.nodes.map((n) => [n.id, n]));
+    expect(byId.noNacido.x).toBeLessThan(byId.nacido.x);
+  });
+
+  it('ordena de izquierda a derecha las múltiples parejas de una persona', () => {
+    const persons: Record<string, Person> = {
+      x: person('x', 'Equis', 'Lopez'),
+      s1: person('s1', 'Primera', 'Lopez'),
+      s2: person('s2', 'Segunda', 'Lopez'),
+    };
+    const relationships: Relationship[] = [
+      { id: '1', personId1: 'x', personId2: 's1', type: 'spouse' },
+      { id: '2', personId1: 'x', personId2: 's2', type: 'spouse' },
+    ];
+
+    const layout = computeLayout(persons, relationships);
+    const byId = Object.fromEntries(layout.nodes.map((n) => [n.id, n]));
+
+    expect(byId.s1.generation).toBe(byId.s2.generation);
+    expect(byId.s1.x).toBeLessThan(byId.s2.x);
   });
 });

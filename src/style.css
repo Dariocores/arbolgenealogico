@@ -11,6 +11,7 @@
   --tree-bg: #f8fafc;
   --tree-node-male: #a8d5f5;
   --tree-node-female: #f7c8dc;
+  --tree-node-nonbinary: #cdb4f5;
   --tree-node-other: #d8dce0;
   --tree-node-text: #1f2937;
   --tree-line-descent: #94a3b8;
@@ -29,6 +30,7 @@
   --tree-bg: #16202e;
   --tree-node-male: #7fb6e0;
   --tree-node-female: #e0a0bd;
+  --tree-node-nonbinary: #b09ad8;
   --tree-node-other: #a8b0b8;
   --tree-node-text: #16202e;
   --tree-line-descent: #666666;

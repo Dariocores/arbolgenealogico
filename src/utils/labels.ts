@@ -1,8 +1,9 @@
-import type { Gender, RelationshipType } from '@/types/genealogy';
+import type { Gender, NonBornStatus, RelationshipType } from '@/types/genealogy';
 
 const GENDER_LABELS: Record<Gender, string> = {
   male: 'Masculino',
   female: 'Femenino',
+  nonbinary: 'No binario',
   other: 'Otro',
   unknown: 'Desconocido',
 };
@@ -10,6 +11,17 @@ const GENDER_LABELS: Record<Gender, string> = {
 export function genderLabel(gender: Gender | undefined): string {
   if (!gender) return '—';
   return GENDER_LABELS[gender] ?? 'Desconocido';
+}
+
+const NON_BORN_LABELS: Record<NonBornStatus, string> = {
+  miscarriage: 'Aborto espontáneo (A.E)',
+  abortion: 'Aborto provocado (A.P)',
+  stillborn: 'No nacido/a (N.N)',
+};
+
+export function nonBornLabel(status: NonBornStatus | undefined): string {
+  if (!status) return '—';
+  return NON_BORN_LABELS[status] ?? '—';
 }
 
 const RELATIONSHIP_LABELS: Record<RelationshipType, string> = {

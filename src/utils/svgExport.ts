@@ -10,6 +10,9 @@ import {
   symbolPath,
   deceasedLine,
   lifeSpan,
+  ageText,
+  nonBornCode,
+  deathMarkers,
   toRoman,
   fullName,
   escapeXml,
@@ -18,6 +21,7 @@ import type { Person, Relationship } from '@/types/genealogy';
 
 export interface TreeExportOptions {
   title?: string;
+  rootPersonId?: string;
 }
 
 interface Theme {
@@ -28,6 +32,7 @@ interface Theme {
   border: string;
   male: string;
   female: string;
+  nonbinary: string;
   other: string;
   nodeText: string;
   marriage: string;
@@ -42,6 +47,7 @@ const FALLBACK_THEME: Theme = {
   border: '#cbd5e1',
   male: '#a8d5f5',
   female: '#f7c8dc',
+  nonbinary: '#cdb4f5',
   other: '#d8dce0',
   nodeText: '#1f2937',
   marriage: '#00897b',
@@ -67,6 +73,7 @@ export function readTheme(): Theme {
     border: cssVar('--border', FALLBACK_THEME.border),
     male: cssVar('--tree-node-male', FALLBACK_THEME.male),
     female: cssVar('--tree-node-female', FALLBACK_THEME.female),
+    nonbinary: cssVar('--tree-node-nonbinary', FALLBACK_THEME.nonbinary),
     other: cssVar('--tree-node-other', FALLBACK_THEME.other),
     nodeText: cssVar('--tree-node-text', FALLBACK_THEME.nodeText),
     marriage: cssVar('--tree-line-marriage', FALLBACK_THEME.marriage),
@@ -78,6 +85,7 @@ function genderFill(theme: Theme, gender: string): string {
   const cls = genderClass(gender);
   if (cls === 'male') return theme.male;
   if (cls === 'female') return theme.female;
+  if (cls === 'nonbinary') return theme.nonbinary;
   return theme.other;
 }
 
@@ -92,6 +100,10 @@ function legendGroup(theme: Theme, x: number, y: number): string {
       'Mujer',
     ],
     [
+      `<path d="M6 0 L11 11 L1 11 Z" fill="${theme.nonbinary}" stroke="#ffffff" stroke-width="1"/>`,
+      'No binario',
+    ],
+    [
       `<path d="M6 0 L12 6 L6 12 L0 6 Z" fill="${theme.other}" stroke="#ffffff" stroke-width="1"/>`,
       'Desconocido',
     ],
@@ -99,6 +111,11 @@ function legendGroup(theme: Theme, x: number, y: number): string {
       `<rect x="0" y="0" width="12" height="12" fill="${theme.other}" stroke="#ffffff" stroke-width="1"/>` +
         `<line x1="0" y1="12" x2="12" y2="0" stroke="${theme.nodeText}" stroke-width="1.5"/>`,
       'Fallecido',
+    ],
+    [
+      `<path d="M6 1.5 L10.5 6 L6 10.5 L1.5 6 Z" fill="${theme.other}" stroke="#ffffff" stroke-width="1"/>` +
+        `<path d="M6 0 L12 6 L6 12 L0 6 Z" fill="none" stroke="${theme.nodeText}" stroke-width="1.2"/>`,
+      'Consultante',
     ],
   ];
 
@@ -129,8 +146,15 @@ interface Box {
   height: number;
 }
 
-function symbolMarkup(theme: Theme, gender: string): string {
-  return `<path d="${symbolPath(gender)}" fill="${genderFill(theme, gender)}" stroke="#ffffff" stroke-width="2" filter="url(#nodeShadow)"/>`;
+function symbolMarkup(theme: Theme, person: Person, isConsultant: boolean): string {
+  const scale = person.nonBorn ? 0.5 : 1;
+  const transform = scale !== 1 ? ` transform="scale(${scale})"` : '';
+  const base =
+    `<path d="${symbolPath(person.gender)}" fill="${genderFill(theme, person.gender)}" stroke="#ffffff" stroke-width="2" filter="url(#nodeShadow)"${transform}/>`;
+  const consultant = isConsultant
+    ? `<path d="${symbolPath(person.gender)}" fill="none" stroke="${theme.nodeText}" stroke-width="1.5" transform="scale(1.35)"/>`
+    : '';
+  return base + consultant;
 }
 
 function buildSvg(
@@ -196,6 +220,7 @@ function buildSvg(
   for (const node of layout.nodes) {
     const p = node.person;
     const span = lifeSpan(p);
+    const age = ageText(p);
     const d = deceasedLine(p.gender);
     const nameY = span
       ? SYMBOL_TOP + SYMBOL + 20
@@ -204,15 +229,26 @@ function buildSvg(
       ? `<line x1="${d[0]}" y1="${d[1]}" x2="${d[2]}" y2="${d[3]}" stroke="${theme.nodeText}" stroke-width="2" stroke-linecap="round"/>`
       : '';
     const dates = span
-      ? `<text x="${NODE_W / 2}" y="${SYMBOL_TOP + SYMBOL + 36}" text-anchor="middle" fill="${theme.muted}" font-size="10">${escapeXml(span)}</text>`
+      ? `<text x="${NODE_W / 2}" y="${SYMBOL_TOP + SYMBOL + 36}" text-anchor="middle" fill="${theme.muted}" font-size="10">${escapeXml(age ? `${span} · ${age}` : span)}</text>`
       : '';
+    const codes = deathMarkers(p).join(' · ');
+    const markers = codes
+      ? `<text x="${NODE_W / 2 + SYMBOL / 2 + 4}" y="${SYMBOL_CY - SYMBOL / 2 + 2}" fill="${theme.marriage}" font-size="10" font-weight="700">${escapeXml(codes)}</text>`
+      : '';
+    const nonBorn =
+      p.nonBorn
+        ? `<text x="${NODE_W / 2 + SYMBOL / 2 + 2}" y="${SYMBOL_CY + SYMBOL / 2}" fill="${theme.muted}" font-size="10" font-style="italic">${nonBornCode(p.nonBorn)}</text>`
+        : '';
+    const isConsultant = !!options.rootPersonId && node.id === options.rootPersonId;
 
     parts.push(
       `<g transform="translate(${node.x}, ${node.y})">` +
         `<g transform="translate(${NODE_W / 2}, ${SYMBOL_CY})">` +
-        symbolMarkup(theme, p.gender) +
+        symbolMarkup(theme, p, isConsultant) +
         death +
         `</g>` +
+        markers +
+        nonBorn +
         `<text x="${NODE_W / 2 - SYMBOL / 2 - 4}" y="${SYMBOL_CY - SYMBOL / 2 + 4}" text-anchor="end" fill="${theme.muted}" font-size="10" font-weight="700">${numberById.get(node.id)}</text>` +
         `<text x="${NODE_W / 2}" y="${nameY}" text-anchor="middle" fill="${theme.text}" font-size="12" font-weight="600">${escapeXml(fullName(p))}</text>` +
         dates +

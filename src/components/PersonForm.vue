@@ -17,13 +17,31 @@
         <select id="pf-gender" v-model="form.gender">
           <option value="male">Masculino</option>
           <option value="female">Femenino</option>
-          <option value="other">Otro</option>
+          <option value="nonbinary">No binario</option>
           <option value="unknown">Desconocido</option>
         </select>
       </div>
       <div class="field">
         <label for="pf-generation">Generación</label>
         <input id="pf-generation" v-model.number="form.generation" type="number" min="0" />
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="pf-nonborn">No nacido/a</label>
+        <select id="pf-nonborn" v-model="form.nonBorn">
+          <option value="">— No aplica —</option>
+          <option value="miscarriage">Aborto espontáneo (A.E)</option>
+          <option value="abortion">Aborto provocado (A.P)</option>
+          <option value="stillborn">No nacido/a (N.N)</option>
+        </select>
+      </div>
+      <div class="field field-inline">
+        <label for="pf-abuse">
+          <input id="pf-abuse" v-model="form.abuse" type="checkbox" />
+          Marcador de abuso (A)
+        </label>
       </div>
     </div>
 
@@ -47,6 +65,16 @@
         <label for="pf-deathplace">Lugar de fallecimiento</label>
         <input id="pf-deathplace" v-model="form.deathPlace" />
       </div>
+    </div>
+
+    <div class="field">
+      <label for="pf-deathcause">Causa de muerte</label>
+      <input id="pf-deathcause" v-model="form.deathCause" placeholder="Ej: cáncer, suicidio..." />
+    </div>
+
+    <div class="field">
+      <label for="pf-conception">Fecha de concepción</label>
+      <input id="pf-conception" v-model="form.conceptionDate" type="date" />
     </div>
 
     <div class="field-row">
@@ -86,7 +114,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
 import { useFamilyTreeStore } from '@/stores/familyTree';
-import type { Gender, Person } from '@/types/genealogy';
+import type { Gender, NonBornStatus, Person } from '@/types/genealogy';
 
 const props = defineProps<{ person?: Person | null }>();
 const emit = defineEmits<{ saved: []; cancel: [] }>();
@@ -98,10 +126,14 @@ interface FormState {
   lastName: string;
   gender: Gender;
   generation: number | null;
+  nonBorn: NonBornStatus | '';
+  abuse: boolean;
   birthDate: string;
   birthPlace: string;
   deathDate: string;
   deathPlace: string;
+  deathCause: string;
+  conceptionDate: string;
   occupation: string;
   religion: string;
   photoUrl: string;
@@ -114,10 +146,14 @@ function emptyForm(): FormState {
     lastName: '',
     gender: 'unknown',
     generation: null,
+    nonBorn: '',
+    abuse: false,
     birthDate: '',
     birthPlace: '',
     deathDate: '',
     deathPlace: '',
+    deathCause: '',
+    conceptionDate: '',
     occupation: '',
     religion: '',
     photoUrl: '',
@@ -133,10 +169,14 @@ function fill(person: Person): void {
   form.lastName = person.lastName;
   form.gender = person.gender;
   form.generation = person.generation ?? null;
+  form.nonBorn = person.nonBorn ?? '';
+  form.abuse = person.abuse ?? false;
   form.birthDate = person.birthDate ?? '';
   form.birthPlace = person.birthPlace ?? '';
   form.deathDate = person.deathDate ?? '';
   form.deathPlace = person.deathPlace ?? '';
+  form.deathCause = person.deathCause ?? '';
+  form.conceptionDate = person.conceptionDate ?? '';
   form.occupation = person.occupation ?? '';
   form.religion = person.religion ?? '';
   form.photoUrl = person.photoUrl ?? '';
@@ -172,10 +212,14 @@ function submit(): void {
     lastName: form.lastName.trim(),
     gender: form.gender,
     generation: form.generation ?? undefined,
+    nonBorn: form.nonBorn || undefined,
+    abuse: form.abuse || undefined,
     birthDate: clean(form.birthDate),
     birthPlace: clean(form.birthPlace),
     deathDate: clean(form.deathDate),
     deathPlace: clean(form.deathPlace),
+    deathCause: clean(form.deathCause),
+    conceptionDate: clean(form.conceptionDate),
     occupation: clean(form.occupation),
     religion: clean(form.religion),
     photoUrl: clean(form.photoUrl),
@@ -213,6 +257,23 @@ function submit(): void {
 .field label {
   font-size: 0.85em;
   color: var(--muted);
+}
+
+.field-inline {
+  justify-content: flex-end;
+}
+
+.field-inline label {
+  flex-direction: row;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95em;
+  color: var(--text);
+}
+
+.field-inline input[type='checkbox'] {
+  width: auto;
 }
 
 .field input,

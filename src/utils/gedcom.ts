@@ -32,6 +32,7 @@ const PARENT_TYPES: RelationshipType[] = [
 export function genderToSex(gender: Gender): string {
   if (gender === 'male') return 'M';
   if (gender === 'female') return 'F';
+  if (gender === 'nonbinary') return 'X';
   return 'U';
 }
 
@@ -39,6 +40,7 @@ export function sexToGender(sex: string): Gender {
   const value = sex.trim().toUpperCase();
   if (value === 'M') return 'male';
   if (value === 'F') return 'female';
+  if (value === 'X' || value === 'N') return 'nonbinary';
   return 'unknown';
 }
 

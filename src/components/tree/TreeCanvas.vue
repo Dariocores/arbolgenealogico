@@ -15,6 +15,9 @@ import {
   symbolPath,
   deceasedLine,
   lifeSpan,
+  ageText,
+  nonBornCode,
+  deathMarkers,
   toRoman,
 } from '@/utils/treeRender';
 
@@ -111,7 +114,16 @@ function render(): void {
   symbol
     .append('path')
     .attr('d', (d) => symbolPath(d.person.gender))
+    .attr('transform', (d) => (d.person.nonBorn ? 'scale(0.5)' : null))
     .attr('class', (d) => `node-symbol ${genderClass(d.person.gender)}`);
+
+  // El consultante (persona raíz) se destaca con un contorno doble.
+  symbol
+    .filter((d) => d.id === store.rootPersonId)
+    .append('path')
+    .attr('class', 'consultant-mark')
+    .attr('d', (d) => symbolPath(d.person.gender))
+    .attr('transform', 'scale(1.35)');
 
   symbol
     .filter((d) => !!d.person.deathDate)
@@ -121,6 +133,21 @@ function render(): void {
     .attr('y1', (d) => deceasedLine(d.person.gender)[1])
     .attr('x2', (d) => deceasedLine(d.person.gender)[2])
     .attr('y2', (d) => deceasedLine(d.person.gender)[3]);
+
+  node
+    .append('text')
+    .attr('x', NODE_W / 2 + SYMBOL / 2 + 4)
+    .attr('y', SYMBOL_CY - SYMBOL / 2 + 2)
+    .attr('class', 'node-markers')
+    .text((d) => deathMarkers(d.person).join(' · '));
+
+  node
+    .filter((d) => !!d.person.nonBorn)
+    .append('text')
+    .attr('x', NODE_W / 2 + SYMBOL / 2 + 2)
+    .attr('y', SYMBOL_CY + SYMBOL / 2)
+    .attr('class', 'node-nonborn')
+    .text((d) => nonBornCode(d.person.nonBorn));
 
   node
     .append('text')
@@ -145,7 +172,11 @@ function render(): void {
     .attr('y', SYMBOL_TOP + SYMBOL + 36)
     .attr('text-anchor', 'middle')
     .attr('class', 'node-dates')
-    .text((d) => lifeSpan(d.person));
+    .text((d) => {
+      const age = ageText(d.person);
+      const dates = lifeSpan(d.person);
+      return age ? `${dates} · ${age}` : dates;
+    });
 
   if (structureChanged) fitToView();
 }
@@ -213,6 +244,12 @@ watch(
       </span>
       <span class="legend-item">
         <svg viewBox="0 0 18 18" class="legend-svg">
+          <path d="M9 3 L15 15 L3 15 Z" class="legend-nonbinary" />
+        </svg>
+        No binario
+      </span>
+      <span class="legend-item">
+        <svg viewBox="0 0 18 18" class="legend-svg">
           <path d="M9 3 L15 9 L9 15 L3 9 Z" class="legend-other" />
         </svg>
         Desconocido
@@ -223,6 +260,13 @@ watch(
           <line x1="3" y1="15" x2="15" y2="3" class="legend-death" />
         </svg>
         Fallecido
+      </span>
+      <span class="legend-item">
+        <svg viewBox="0 0 18 18" class="legend-svg">
+          <path d="M9 4.5 L13.5 9 L9 13.5 L4.5 9 Z" class="legend-other" />
+          <path d="M9 3 L15 9 L9 15 L3 9 Z" class="legend-consultant" />
+        </svg>
+        Consultante
       </span>
       <span class="legend-item">I, II, III · generación</span>
       <span class="legend-item">1, 2, 3 · orden</span>
@@ -333,8 +377,30 @@ watch(
   fill: var(--tree-node-female);
 }
 
+:deep(.node .node-symbol.nonbinary) {
+  fill: var(--tree-node-nonbinary);
+}
+
 :deep(.node .node-symbol.other) {
   fill: var(--tree-node-other);
+}
+
+:deep(.node .consultant-mark) {
+  fill: none;
+  stroke: var(--tree-node-text);
+  stroke-width: 1.5;
+}
+
+:deep(.node .node-markers) {
+  fill: var(--danger);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+:deep(.node .node-nonborn) {
+  fill: var(--muted);
+  font-size: 10px;
+  font-style: italic;
 }
 
 :deep(.node .death-mark) {
@@ -409,10 +475,22 @@ watch(
   stroke-width: 1;
 }
 
+.legend-nonbinary {
+  fill: var(--tree-node-nonbinary);
+  stroke: #ffffff;
+  stroke-width: 1;
+}
+
 .legend-other {
   fill: var(--tree-node-other);
   stroke: #ffffff;
   stroke-width: 1;
+}
+
+.legend-consultant {
+  fill: none;
+  stroke: var(--tree-node-text);
+  stroke-width: 1.5;
 }
 
 .legend-death {

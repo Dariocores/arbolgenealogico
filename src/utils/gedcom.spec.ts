@@ -63,13 +63,15 @@ describe('gedcom gender helpers', () => {
   it('mapea género a sexo', () => {
     expect(genderToSex('male')).toBe('M');
     expect(genderToSex('female')).toBe('F');
+    expect(genderToSex('nonbinary')).toBe('X');
     expect(genderToSex('other')).toBe('U');
   });
 
   it('mapea sexo a género', () => {
     expect(sexToGender('M')).toBe('male');
     expect(sexToGender('F')).toBe('female');
-    expect(sexToGender('X')).toBe('unknown');
+    expect(sexToGender('X')).toBe('nonbinary');
+    expect(sexToGender('U')).toBe('unknown');
   });
 });
 

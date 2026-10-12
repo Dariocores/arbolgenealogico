@@ -54,6 +54,25 @@
     </section>
 
     <section class="settings-section">
+      <h3>Análisis de fechas (dobles / maestro)</h3>
+      <p class="settings-note">
+        Detecta coincidencias según el enfoque sistémico: mismo día (±10 días),
+        desplazamientos de 3, 6 y 9 meses, fechas espejo y herederos
+        universales.
+      </p>
+      <p v-if="dateMatches.length === 0" class="settings-hint">
+        No se encontraron coincidencias de fecha.
+      </p>
+      <ul v-else class="match-list">
+        <li v-for="m in dateMatches" :key="m.id">
+          <span class="match-kind">{{ matchKindLabel(m.kind) }}</span>
+          <span>{{ m.aName }} · {{ m.bName }}</span>
+          <span class="match-detail">{{ m.detail }}</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="settings-section">
       <h3>Modelo de datos</h3>
       <p class="settings-note">
         Arquitectura basada en tipos <code>Person</code> y
@@ -91,9 +110,11 @@ import {
   downloadBlob,
   downloadTextFile,
 } from '@/utils/svgExport';
+import { analyzeDates, matchKindLabel } from '@/utils/analysis';
 
 const store = useFamilyTreeStore();
 const people = computed(() => Object.values(store.persons));
+const dateMatches = computed(() => analyzeDates(store.persons));
 
 const jsonInput = ref<HTMLInputElement | null>(null);
 const gedcomInput = ref<HTMLInputElement | null>(null);
@@ -127,13 +148,17 @@ function exportGEDCOMFile(): void {
 function treeSvgMarkup(): string {
   return buildTreeSvg(store.persons, store.relationships, {
     title: store.treeName,
+    rootPersonId: store.rootPersonId,
   });
 }
 
 function exportTreeSVG(): void {
   downloadTextFile(
     `${store.activeTreeId}-arbol.svg`,
-    buildTreeSvg(store.persons, store.relationships, { title: store.treeName }),
+    buildTreeSvg(store.persons, store.relationships, {
+      title: store.treeName,
+      rootPersonId: store.rootPersonId,
+    }),
     'image/svg+xml',
   );
   message.value = 'Árbol exportado como SVG.';
@@ -144,6 +169,7 @@ async function exportTreePNG(): Promise<void> {
   try {
     const svg = buildTreeSvg(store.persons, store.relationships, {
       title: store.treeName,
+      rootPersonId: store.rootPersonId,
     });
     const blob = await svgToPngBlob(svg);
     downloadBlob(`${store.activeTreeId}.png`, blob);
@@ -296,6 +322,41 @@ code {
   padding: 0;
   font-size: 0.9em;
   line-height: 2;
+}
+
+.match-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9em;
+}
+
+.match-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  padding: 8px 10px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.match-kind {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.match-detail {
+  color: var(--muted);
+  margin-left: auto;
+}
+
+.settings-hint {
+  color: var(--muted);
+  font-size: 0.88em;
 }
 
 .mono {

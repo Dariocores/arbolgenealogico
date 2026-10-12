@@ -41,6 +41,13 @@ function addTo(map: Map<string, string[]>, key: string, value: string): void {
   }
 }
 
+// Clave de orden de una hermandad: se prefiere la fecha de concepción (para
+// incluir a los no nacidos, que a veces no tienen fecha de nacimiento) y se cae
+// a la de nacimiento.
+function siblingOrderKey(person: Person): string {
+  return person.conceptionDate || person.birthDate || '';
+}
+
 function isotonic(values: number[]): number[] {
   const means: number[] = [];
   const weights: number[] = [];
@@ -98,29 +105,34 @@ export function computeLayout(
     }
   }
 
+  // Generaciones relativas: cada progenitor queda una fila por encima de su
+  // descendiente y cada pareja comparte fila. La relajación corre en AMBOS
+  // sentidos (arriba y abajo) para que, cuando un lado de la pareja tenga más
+  // generaciones de ancestros que el otro, la diferencia se absorba hacia
+  // ARRIBA y no empuje hacia abajo a la pareja ni a los suegros. Así los
+  // padres del marido y los de la mujer quedan a la misma altura.
   const gen = new Map<string, number>();
-  for (const p of people) {
-    if (!(parentMap.get(p.id)?.length)) gen.set(p.id, 0);
-  }
+  for (const p of people) gen.set(p.id, 0);
   let changed = true;
   let guard = 0;
   while (changed && guard < 10000) {
     changed = false;
     guard += 1;
     for (const rel of parentRels) {
-      const pg = gen.get(rel.personId1);
-      if (pg === undefined) continue;
-      const cur = gen.get(rel.personId2);
-      if (cur === undefined || cur < pg + 1) {
+      const pg = gen.get(rel.personId1) as number;
+      const cg = gen.get(rel.personId2) as number;
+      if (cg < pg + 1) {
         gen.set(rel.personId2, pg + 1);
+        changed = true;
+      } else if (pg < cg - 1) {
+        gen.set(rel.personId1, cg - 1);
         changed = true;
       }
     }
     for (const rel of spouseRels) {
-      const g1 = gen.get(rel.personId1);
-      const g2 = gen.get(rel.personId2);
-      if (g1 === undefined && g2 === undefined) continue;
-      const target = Math.max(g1 ?? 0, g2 ?? 0);
+      const g1 = gen.get(rel.personId1) as number;
+      const g2 = gen.get(rel.personId2) as number;
+      const target = Math.max(g1, g2);
       if (g1 !== target) {
         gen.set(rel.personId1, target);
         changed = true;
@@ -131,7 +143,14 @@ export function computeLayout(
       }
     }
   }
-  for (const p of people) if (!gen.has(p.id)) gen.set(p.id, 0);
+  let minGen = Infinity;
+  for (const p of people) {
+    const g = gen.get(p.id) as number;
+    if (g < minGen) minGen = g;
+  }
+  if (minGen !== 0) {
+    for (const p of people) gen.set(p.id, (gen.get(p.id) as number) - minGen);
+  }
 
   const rowMap = new Map<number, string[]>();
   for (const p of people) {
@@ -153,7 +172,7 @@ export function computeLayout(
       const kids = (childMap.get(id) || [])
         .slice()
         .sort((a, b) =>
-          (persons[a].birthDate || '').localeCompare(persons[b].birthDate || ''),
+          siblingOrderKey(persons[a]).localeCompare(siblingOrderKey(persons[b])),
         );
       for (let i = kids.length - 1; i >= 0; i -= 1) {
         if (!order.has(kids[i])) stack.push(kids[i]);
@@ -257,8 +276,8 @@ export function computeLayout(
           }
         }
         if (!sharesParent) continue;
-        const da = persons[a].birthDate || '';
-        const db = persons[b].birthDate || '';
+        const da = siblingOrderKey(persons[a]);
+        const db = siblingOrderKey(persons[b]);
         if (!da || !db || da === db) continue;
         const older = da < db ? a : b;
         const younger = da < db ? b : a;
@@ -295,10 +314,11 @@ export function computeLayout(
     }
   }
 
-  // Regla de genograma: en una pareja, quien se incorpora al linaje (no tiene
-  // progenitores registrados en el árbol) se ubica a la izquierda; el
-  // descendiente del linaje queda a la derecha, de modo que las líneas
-  // familiares desemboquen directamente sobre él/ella.
+  // Regla de genograma: en cada pareja el hombre queda a la izquierda y la
+  // mujer a la derecha. Cuando el sexo no permite decidir (mismo sexo o sin
+  // dato), se usa la regla previa: quien se incorpora al linaje (no tiene
+  // progenitores registrados) va a la izquierda y el descendiente del linaje
+  // queda a la derecha, de modo que las líneas familiares desemboquen sobre él.
   for (const rel of spouseRels) {
     const a = rel.personId1;
     const b = rel.personId2;
@@ -307,22 +327,33 @@ export function computeLayout(
     const row = rowMap.get(g);
     if (!row) continue;
 
-    const aHasParents = (parentMap.get(a)?.length ?? 0) > 0;
-    const bHasParents = (parentMap.get(b)?.length ?? 0) > 0;
-    if (aHasParents === bHasParents) continue;
+    const genderA = persons[a].gender;
+    const genderB = persons[b].gender;
+    let left: string;
+    let right: string;
+    if (genderA === 'male' && genderB !== 'male') {
+      left = a;
+      right = b;
+    } else if (genderB === 'male' && genderA !== 'male') {
+      left = b;
+      right = a;
+    } else {
+      const aHasParents = (parentMap.get(a)?.length ?? 0) > 0;
+      const bHasParents = (parentMap.get(b)?.length ?? 0) > 0;
+      if (aHasParents === bHasParents) continue;
+      left = aHasParents ? b : a;
+      right = aHasParents ? a : b;
+    }
 
-    const enters = aHasParents ? b : a;
-    const bloodline = aHasParents ? a : b;
-    const entersIndex = row.indexOf(enters);
-    const bloodIndex = row.indexOf(bloodline);
-    if (entersIndex === -1 || bloodIndex === -1) continue;
+    const leftIndex = row.indexOf(left);
+    const rightIndex = row.indexOf(right);
+    if (leftIndex === -1 || rightIndex === -1) continue;
 
-    // Se reubica al integrante que "entra" inmediatamente a la izquierda de su
-    // pareja, sin intercambiar posiciones con terceros (así no se rompe el
-    // orden de nacimiento de los hermanos del linaje).
-    row.splice(entersIndex, 1);
-    const target = row.indexOf(bloodline);
-    row.splice(target, 0, enters);
+    // Se reubica a la persona de la izquierda inmediatamente a la izquierda de
+    // su pareja (sin intercambiar posiciones con terceros).
+    row.splice(leftIndex, 1);
+    const target = row.indexOf(right);
+    row.splice(target, 0, left);
     row.forEach((id, i) => indexInRow.set(id, i));
   }
 
@@ -409,6 +440,29 @@ export function computeLayout(
     const reordered = order.flatMap((k) => grouped[k].flatMap((bi) => blocks[bi]));
     rowMap.set(g, reordered);
     reordered.forEach((id, idx) => indexInRow.set(id, idx));
+  }
+
+  // Múltiples uniones: las parejas de una misma persona se ordenan de izquierda
+  // a derecha según el orden en que se registraron las uniones, manteniendo a
+  // cada cónyuge en la posición que ya ocupaba dentro de la fila.
+  const spousesOf = new Map<string, string[]>();
+  for (const rel of spouseRels) {
+    addTo(spousesOf, rel.personId1, rel.personId2);
+    addTo(spousesOf, rel.personId2, rel.personId1);
+  }
+  for (const [person, spouses] of spousesOf) {
+    if (spouses.length < 2) continue;
+    const g = gen.get(person);
+    if (g === undefined) continue;
+    const row = rowMap.get(g);
+    if (!row) continue;
+    const present = spouses.filter((s) => row.includes(s));
+    if (present.length < 2) continue;
+    const positions = present.map((s) => row.indexOf(s)).sort((a, b) => a - b);
+    positions.forEach((pos, i) => {
+      row[pos] = present[i];
+    });
+    row.forEach((id, idx) => indexInRow.set(id, idx));
   }
 
   const minGap = NODE_W + H_GAP;
